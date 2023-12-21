@@ -304,7 +304,9 @@ double test(const size_t num_dg_pts) {
               grmhd::GhValenciaDivClean::fd::MonotonisedCentralPrim>()},
       std::unique_ptr<
           grmhd::GhValenciaDivClean::BoundaryCorrections::BoundaryCorrection>{
-          std::make_unique<BoundaryCorrection>()},
+          std::make_unique<BoundaryCorrection>(
+              gh::BoundaryCorrections::UpwindPenalty<3>{},
+              ValenciaDivClean::BoundaryCorrections::Hll{1.0e-30, 1.0e-8})},
       soln.equation_of_state().promote_to_3d_eos(), dg_prim_vars,
       // Set incorrect size for dt variables because they should get resized.
       Variables<typename dt_variables_tag::tags_list>{}, initial_variables,
