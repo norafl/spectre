@@ -54,7 +54,6 @@ first block [1,2] representing a line between gridpoints 1 and 2, and the second
 block [2,3] representing a line between gridpoints 2 and 3. This works similarly
 in the other dimensions.
 
-
 # How does ExtendConnectivity work?
 
 ExtendConnectivity is a post-processing algorithm that looks to add more
