@@ -124,13 +124,15 @@ class HydroFreeOutflow final : public BoundaryCondition {
   using dg_gridless_tags = tmpl::list<>;
 
   static std::optional<std::string> dg_ghost(
+      const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> tilde_b,
       const gsl::not_null<Scalar<DataVector>*> tilde_d,
       const gsl::not_null<Scalar<DataVector>*> tilde_ye,
       const gsl::not_null<Scalar<DataVector>*> tilde_tau,
       const gsl::not_null<tnsr::i<DataVector, 3, Frame::Inertial>*> tilde_s,
-      const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> tilde_b,
       const gsl::not_null<Scalar<DataVector>*> tilde_phi,
 
+      const gsl::not_null<tnsr::IJ<DataVector, 3, Frame::Inertial>*>
+          tilde_b_flux,
       const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*>
           tilde_d_flux,
       const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*>
@@ -139,8 +141,6 @@ class HydroFreeOutflow final : public BoundaryCondition {
           tilde_tau_flux,
       const gsl::not_null<tnsr::Ij<DataVector, 3, Frame::Inertial>*>
           tilde_s_flux,
-      const gsl::not_null<tnsr::IJ<DataVector, 3, Frame::Inertial>*>
-          tilde_b_flux,
       const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*>
           tilde_phi_flux,
 
