@@ -125,19 +125,25 @@ class HydroFreeOutflow final : public BoundaryCondition {
   using dg_gridless_tags = tmpl::list<>;
 
   static std::optional<std::string> dg_ghost(
-      gsl::not_null<Scalar<DataVector>*> tilde_d,
-      gsl::not_null<Scalar<DataVector>*> tilde_ye,
-      gsl::not_null<Scalar<DataVector>*> tilde_tau,
-      gsl::not_null<tnsr::i<DataVector, 3, Frame::Inertial>*> tilde_s,
-      gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> tilde_b,
-      gsl::not_null<Scalar<DataVector>*> tilde_phi,
+      const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> tilde_b,
+      const gsl::not_null<Scalar<DataVector>*> tilde_d,
+      const gsl::not_null<Scalar<DataVector>*> tilde_ye,
+      const gsl::not_null<Scalar<DataVector>*> tilde_tau,
+      const gsl::not_null<tnsr::i<DataVector, 3, Frame::Inertial>*> tilde_s,
+      const gsl::not_null<Scalar<DataVector>*> tilde_phi,
 
-      gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> tilde_d_flux,
-      gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> tilde_ye_flux,
-      gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> tilde_tau_flux,
-      gsl::not_null<tnsr::Ij<DataVector, 3, Frame::Inertial>*> tilde_s_flux,
-      gsl::not_null<tnsr::IJ<DataVector, 3, Frame::Inertial>*> tilde_b_flux,
-      gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> tilde_phi_flux,
+      const gsl::not_null<tnsr::IJ<DataVector, 3, Frame::Inertial>*>
+          tilde_b_flux,
+      const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*>
+          tilde_d_flux,
+      const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*>
+          tilde_ye_flux,
+      const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*>
+          tilde_tau_flux,
+      const gsl::not_null<tnsr::Ij<DataVector, 3, Frame::Inertial>*>
+          tilde_s_flux,
+      const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*>
+          tilde_phi_flux,
 
       gsl::not_null<Scalar<DataVector>*> lapse,
       gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> shift,
