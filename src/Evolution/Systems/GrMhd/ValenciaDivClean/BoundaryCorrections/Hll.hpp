@@ -147,17 +147,17 @@ class Hll final : public BoundaryCorrection {
       gsl::not_null<Scalar<DataVector>*> packaged_largest_outgoing_char_speed,
       gsl::not_null<Scalar<DataVector>*> packaged_largest_ingoing_char_speed,
 
+      const tnsr::I<DataVector, 3, Frame::Inertial>& tilde_b,
       const Scalar<DataVector>& tilde_d, const Scalar<DataVector>& tilde_ye,
       const Scalar<DataVector>& tilde_tau,
       const tnsr::i<DataVector, 3, Frame::Inertial>& tilde_s,
-      const tnsr::I<DataVector, 3, Frame::Inertial>& tilde_b,
       const Scalar<DataVector>& tilde_phi,
 
+      const tnsr::IJ<DataVector, 3, Frame::Inertial>& flux_tilde_b,
       const tnsr::I<DataVector, 3, Frame::Inertial>& flux_tilde_d,
       const tnsr::I<DataVector, 3, Frame::Inertial>& flux_tilde_ye,
       const tnsr::I<DataVector, 3, Frame::Inertial>& flux_tilde_tau,
       const tnsr::Ij<DataVector, 3, Frame::Inertial>& flux_tilde_s,
-      const tnsr::IJ<DataVector, 3, Frame::Inertial>& flux_tilde_b,
       const tnsr::I<DataVector, 3, Frame::Inertial>& flux_tilde_phi,
 
       const Scalar<DataVector>& lapse,
@@ -170,13 +170,13 @@ class Hll final : public BoundaryCorrection {
       const std::optional<Scalar<DataVector>>& normal_dot_mesh_velocity);
 
   static void dg_boundary_terms(
+      gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*>
+          boundary_correction_tilde_b,
       gsl::not_null<Scalar<DataVector>*> boundary_correction_tilde_d,
       gsl::not_null<Scalar<DataVector>*> boundary_correction_tilde_ye,
       gsl::not_null<Scalar<DataVector>*> boundary_correction_tilde_tau,
       gsl::not_null<tnsr::i<DataVector, 3, Frame::Inertial>*>
           boundary_correction_tilde_s,
-      gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*>
-          boundary_correction_tilde_b,
       gsl::not_null<Scalar<DataVector>*> boundary_correction_tilde_phi,
       const Scalar<DataVector>& tilde_d_int,
       const Scalar<DataVector>& tilde_ye_int,
