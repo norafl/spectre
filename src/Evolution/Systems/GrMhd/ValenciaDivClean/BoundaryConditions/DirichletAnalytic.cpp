@@ -84,19 +84,19 @@ void DirichletAnalytic::pup(PUP::er& p) {
 PUP::able::PUP_ID DirichletAnalytic::my_PUP_ID = 0;
 
 std::optional<std::string> DirichletAnalytic::dg_ghost(
+    const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> tilde_b,
     const gsl::not_null<Scalar<DataVector>*> tilde_d,
     const gsl::not_null<Scalar<DataVector>*> tilde_ye,
     const gsl::not_null<Scalar<DataVector>*> tilde_tau,
     const gsl::not_null<tnsr::i<DataVector, 3, Frame::Inertial>*> tilde_s,
-    const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> tilde_b,
     const gsl::not_null<Scalar<DataVector>*> tilde_phi,
 
+    const gsl::not_null<tnsr::IJ<DataVector, 3, Frame::Inertial>*> tilde_b_flux,
     const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> tilde_d_flux,
     const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> tilde_ye_flux,
     const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*>
         tilde_tau_flux,
     const gsl::not_null<tnsr::Ij<DataVector, 3, Frame::Inertial>*> tilde_s_flux,
-    const gsl::not_null<tnsr::IJ<DataVector, 3, Frame::Inertial>*> tilde_b_flux,
     const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*>
         tilde_phi_flux,
 
@@ -172,7 +172,7 @@ std::optional<std::string> DirichletAnalytic::dg_ghost(
       get<gr::Tags::InverseSpatialMetric<DataVector, 3>>(boundary_values);
   // Recover the conservative variables from the primitives
   ConservativeFromPrimitive::apply(
-      tilde_d, tilde_ye, tilde_tau, tilde_s, tilde_b, tilde_phi,
+      tilde_b, tilde_d, tilde_ye, tilde_tau, tilde_s, tilde_phi,
       get<hydro::Tags::RestMassDensity<DataVector>>(boundary_values),
       get<hydro::Tags::ElectronFraction<DataVector>>(boundary_values),
       get<hydro::Tags::SpecificInternalEnergy<DataVector>>(boundary_values),
@@ -185,8 +185,8 @@ std::optional<std::string> DirichletAnalytic::dg_ghost(
       get<hydro::Tags::DivergenceCleaningField<DataVector>>(boundary_values));
 
   ComputeFluxes::apply(
-      tilde_d_flux, tilde_ye_flux, tilde_tau_flux, tilde_s_flux, tilde_b_flux,
-      tilde_phi_flux, *tilde_d, *tilde_ye, *tilde_tau, *tilde_s, *tilde_b,
+      tilde_b_flux, tilde_d_flux, tilde_ye_flux, tilde_tau_flux, tilde_s_flux,
+      tilde_phi_flux, *tilde_b, *tilde_d, *tilde_ye, *tilde_tau, *tilde_s,
       *tilde_phi, *lapse, *shift,
       get<gr::Tags::SqrtDetSpatialMetric<DataVector>>(boundary_values),
       get<gr::Tags::SpatialMetric<DataVector, 3>>(boundary_values),
@@ -319,11 +319,11 @@ void DirichletAnalytic::fd_ghost(
     Variables<typename System::variables_tag::tags_list> conserved_vars{
         get(*rest_mass_density).size()};
     ConservativeFromPrimitive::apply(
+        make_not_null(&get<Tags::TildeB<>>(conserved_vars)),
         make_not_null(&get<Tags::TildeD>(conserved_vars)),
         make_not_null(&get<Tags::TildeYe>(conserved_vars)),
         make_not_null(&get<Tags::TildeTau>(conserved_vars)),
         make_not_null(&get<Tags::TildeS<>>(conserved_vars)),
-        make_not_null(&get<Tags::TildeB<>>(conserved_vars)),
         make_not_null(&get<Tags::TildePhi>(conserved_vars)),
 
         get<hydro::Tags::RestMassDensity<DataVector>>(boundary_values),
@@ -339,6 +339,8 @@ void DirichletAnalytic::fd_ghost(
 
     ComputeFluxes::apply(
         make_not_null(
+            &get<Flux<Tags::TildeB<>>>(cell_centered_ghost_fluxes->value())),
+        make_not_null(
             &get<Flux<Tags::TildeD>>(cell_centered_ghost_fluxes->value())),
         make_not_null(
             &get<Flux<Tags::TildeYe>>(cell_centered_ghost_fluxes->value())),
@@ -347,14 +349,11 @@ void DirichletAnalytic::fd_ghost(
         make_not_null(
             &get<Flux<Tags::TildeS<>>>(cell_centered_ghost_fluxes->value())),
         make_not_null(
-            &get<Flux<Tags::TildeB<>>>(cell_centered_ghost_fluxes->value())),
-        make_not_null(
             &get<Flux<Tags::TildePhi>>(cell_centered_ghost_fluxes->value())),
 
-        get<Tags::TildeD>(conserved_vars), get<Tags::TildeYe>(conserved_vars),
-        get<Tags::TildeTau>(conserved_vars),
+        get<Tags::TildeB<>>(conserved_vars), get<Tags::TildeD>(conserved_vars),
+        get<Tags::TildeYe>(conserved_vars), get<Tags::TildeTau>(conserved_vars),
         get<Tags::TildeS<>>(conserved_vars),
-        get<Tags::TildeB<>>(conserved_vars),
         get<Tags::TildePhi>(conserved_vars),
 
         get<gr::Tags::Lapse<DataVector>>(metric_boundary_values),
