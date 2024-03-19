@@ -171,4 +171,8 @@ is once again the blue element and the face connection is coloured brown again.
 
 ## Connecting elements with different p-refinements
 
+<<<<<<< HEAD
 To be added.
+=======
+To be added.
+>>>>>>> 16e1a8a44 (Add ExtendConnectivity entry)
