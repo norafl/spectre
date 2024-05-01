@@ -67,7 +67,7 @@ void fluxes_impl(
       tilde_b_flux->get(i, j) =
           tilde_b.get(j) * transport_velocity->get(i) +
           get(lapse) * (get(tilde_phi) * inv_spatial_metric.get(i, j) -
-                        spatial_velocity.get(j) * tilde_b.get(i));
+                        transport_velocity->get(j) * tilde_b.get(i));
     }
     tilde_s_flux->get(i, i) += get(pressure_star_lapse_sqrt_det_spatial_metric);
   }
