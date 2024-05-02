@@ -311,11 +311,11 @@ void DemandOutgoingCharSpeeds::fd_demand_outgoing_char_speeds(
 
       ConservativeFromPrimitive::apply(
           make_not_null(&get<Tags::TildeB<>>(temp_vars)),
+          make_not_null(&get<Tags::TildePhi>(temp_vars)),
           make_not_null(&get<Tags::TildeD>(temp_vars)),
           make_not_null(&get<Tags::TildeYe>(temp_vars)),
           make_not_null(&get<Tags::TildeTau>(temp_vars)),
           make_not_null(&get<Tags::TildeS<>>(temp_vars)),
-          make_not_null(&get<Tags::TildePhi>(temp_vars)),
 
           // Note: Only the spatial velocity changes.
           *rest_mass_density, *electron_fraction,
@@ -330,6 +330,8 @@ void DemandOutgoingCharSpeeds::fd_demand_outgoing_char_speeds(
           make_not_null(
               &get<Flux<Tags::TildeB<>>>(cell_centered_ghost_fluxes->value())),
           make_not_null(
+              &get<Flux<Tags::TildePhi>>(cell_centered_ghost_fluxes->value())),
+          make_not_null(
               &get<Flux<Tags::TildeD>>(cell_centered_ghost_fluxes->value())),
           make_not_null(
               &get<Flux<Tags::TildeYe>>(cell_centered_ghost_fluxes->value())),
@@ -337,12 +339,10 @@ void DemandOutgoingCharSpeeds::fd_demand_outgoing_char_speeds(
               &get<Flux<Tags::TildeTau>>(cell_centered_ghost_fluxes->value())),
           make_not_null(
               &get<Flux<Tags::TildeS<>>>(cell_centered_ghost_fluxes->value())),
-          make_not_null(
-              &get<Flux<Tags::TildePhi>>(cell_centered_ghost_fluxes->value())),
 
-          get<Tags::TildeB<>>(temp_vars), get<Tags::TildeD>(temp_vars),
-          get<Tags::TildeYe>(temp_vars), get<Tags::TildeTau>(temp_vars),
-          get<Tags::TildeS<>>(temp_vars), get<Tags::TildePhi>(temp_vars),
+          get<Tags::TildeB<>>(temp_vars), get<Tags::TildePhi>(temp_vars),
+          get<Tags::TildeD>(temp_vars), get<Tags::TildeYe>(temp_vars),
+          get<Tags::TildeTau>(temp_vars), get<Tags::TildeS<>>(temp_vars),
 
           get<Lapse>(ghost_fluxes_vars), get<Shift>(ghost_fluxes_vars),
           get<SqrtDetSpatialMetric>(ghost_fluxes_vars),
