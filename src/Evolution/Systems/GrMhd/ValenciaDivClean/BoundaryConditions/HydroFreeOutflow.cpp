@@ -45,20 +45,20 @@ PUP::able::PUP_ID HydroFreeOutflow::my_PUP_ID = 0;
 
 std::optional<std::string> HydroFreeOutflow::dg_ghost(
     const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> tilde_b,
+    const gsl::not_null<Scalar<DataVector>*> tilde_phi,
     const gsl::not_null<Scalar<DataVector>*> tilde_d,
     const gsl::not_null<Scalar<DataVector>*> tilde_ye,
     const gsl::not_null<Scalar<DataVector>*> tilde_tau,
     const gsl::not_null<tnsr::i<DataVector, 3, Frame::Inertial>*> tilde_s,
-    const gsl::not_null<Scalar<DataVector>*> tilde_phi,
 
     const gsl::not_null<tnsr::IJ<DataVector, 3, Frame::Inertial>*> tilde_b_flux,
+    const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*>
+        tilde_phi_flux,
     const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> tilde_d_flux,
     const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> tilde_ye_flux,
     const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*>
         tilde_tau_flux,
     const gsl::not_null<tnsr::Ij<DataVector, 3, Frame::Inertial>*> tilde_s_flux,
-    const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*>
-        tilde_phi_flux,
 
     const gsl::not_null<Scalar<DataVector>*> lapse,
     const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> shift,
@@ -150,16 +150,17 @@ std::optional<std::string> HydroFreeOutflow::dg_ghost(
   get(exterior_divergence_cleaning_field) = 0.0;
 
   ConservativeFromPrimitive::apply(
-      tilde_b, tilde_d, tilde_ye, tilde_tau, tilde_s, tilde_phi,
+      tilde_b, tilde_phi, tilde_d, tilde_ye, tilde_tau, tilde_s,
       interior_rest_mass_density, interior_electron_fraction,
       interior_specific_internal_energy, interior_pressure,
       exterior_spatial_velocity, interior_lorentz_factor,
       interior_magnetic_field, interior_sqrt_det_spatial_metric,
       interior_spatial_metric, exterior_divergence_cleaning_field);
 
-  ComputeFluxes::apply(tilde_b_flux, tilde_d_flux, tilde_ye_flux,
-                       tilde_tau_flux, tilde_s_flux, tilde_phi_flux, *tilde_b,
-                       *tilde_d, *tilde_ye, *tilde_tau, *tilde_s, *tilde_phi,
+  ComputeFluxes::apply(tilde_b_flux, tilde_phi_flux, tilde_d_flux,
+                       tilde_ye_flux,
+                       tilde_tau_flux, tilde_s_flux, *tilde_b, *tilde_phi,
+                       *tilde_d, *tilde_ye, *tilde_tau, *tilde_s,
                        *lapse, *shift, interior_sqrt_det_spatial_metric,
                        interior_spatial_metric, *inv_spatial_metric,
                        interior_pressure, exterior_spatial_velocity,
@@ -238,11 +239,11 @@ void HydroFreeOutflow::fd_ghost(
   if (cell_centered_ghost_fluxes->has_value()) {
     ConservativeFromPrimitive::apply(
         make_not_null(&get<Tags::TildeB<>>(temp_vars)),
+        make_not_null(&get<Tags::TildePhi>(temp_vars)),
         make_not_null(&get<Tags::TildeD>(temp_vars)),
         make_not_null(&get<Tags::TildeYe>(temp_vars)),
         make_not_null(&get<Tags::TildeTau>(temp_vars)),
         make_not_null(&get<Tags::TildeS<>>(temp_vars)),
-        make_not_null(&get<Tags::TildePhi>(temp_vars)),
 
         // Note: Only the spatial velocity changes.
         *rest_mass_density, *electron_fraction,
@@ -257,6 +258,8 @@ void HydroFreeOutflow::fd_ghost(
         make_not_null(
             &get<Flux<Tags::TildeB<>>>(cell_centered_ghost_fluxes->value())),
         make_not_null(
+            &get<Flux<Tags::TildePhi>>(cell_centered_ghost_fluxes->value())),
+        make_not_null(
             &get<Flux<Tags::TildeD>>(cell_centered_ghost_fluxes->value())),
         make_not_null(
             &get<Flux<Tags::TildeYe>>(cell_centered_ghost_fluxes->value())),
@@ -264,12 +267,10 @@ void HydroFreeOutflow::fd_ghost(
             &get<Flux<Tags::TildeTau>>(cell_centered_ghost_fluxes->value())),
         make_not_null(
             &get<Flux<Tags::TildeS<>>>(cell_centered_ghost_fluxes->value())),
-        make_not_null(
-            &get<Flux<Tags::TildePhi>>(cell_centered_ghost_fluxes->value())),
 
-        get<Tags::TildeB<>>(temp_vars), get<Tags::TildeD>(temp_vars),
-        get<Tags::TildeYe>(temp_vars), get<Tags::TildeTau>(temp_vars),
-        get<Tags::TildeS<>>(temp_vars), get<Tags::TildePhi>(temp_vars),
+        get<Tags::TildeB<>>(temp_vars), get<Tags::TildePhi>(temp_vars),
+        get<Tags::TildeD>(temp_vars), get<Tags::TildeYe>(temp_vars),
+        get<Tags::TildeTau>(temp_vars), get<Tags::TildeS<>>(temp_vars),
 
         get<Lapse>(temp_vars), get<Shift>(temp_vars),
         get<SqrtDetSpatialMetric>(temp_vars), get<SpatialMetric>(temp_vars),
