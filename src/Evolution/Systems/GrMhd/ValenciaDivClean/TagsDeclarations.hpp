@@ -24,6 +24,7 @@ struct TildeS;
 template <typename Fr = Frame::Inertial>
 struct TildeB;
 struct TildePhi;
+struct LapseTimesbOverW;
 }  // namespace Tags
 }  // namespace ValenciaDivClean
 }  // namespace grmhd
