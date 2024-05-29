@@ -89,10 +89,10 @@ class Rusanov final : public BoundaryCorrection {
   }; /*
    struct FluxTildeD : db::SimpleTag {
      using type = tnsr::i<DataVector, 3, Frame::Inertial>;
-     };*/
+     };
   struct BDotSpatialVelocity : db::SimpleTag {
     using type = Scalar<DataVector>;
-  };
+    };*/
 
  public:
   using options = tmpl::list<>;
@@ -125,17 +125,18 @@ class Rusanov final : public BoundaryCorrection {
                  ::Tags::NormalDotFlux<Tags::TildeS<Frame::Inertial>>,
                  ::Tags::NormalDotFlux<Tags::TildeB<Frame::Inertial>>,
                  ::Tags::NormalDotFlux<Tags::TildePhi>, AbsCharSpeed,
-                 BDotSpatialVelocity,
+                 hydro::Tags::MagneticFieldDotSpatialVelocity<DataVector>,
                  //                 hydro::Tags::TransportVelocity<DataVector,
                  //                 3, Frame::Inertial>,
                  NormalCovectorSent, LapseSent, Tags::LapseTimesbOverW,
                  ::Tags::Flux<grmhd::ValenciaDivClean::Tags::TildeD,
                               tmpl::size_t<3>, Frame::Inertial>>;
   using dg_package_data_temporary_tags =
-      tmpl::list<gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, 3>>;
-  //               hydro::Tags::MagneticFieldDotSpatialVelocity<DataVector>>;
-  /*hydro::Tags::TransportVelocity<DataVector, 3, Frame::Inertial>,
-  Tags::LapseTimesbOverW>;*/
+      tmpl::list<gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, 3>,
+                 hydro::Tags::MagneticFieldDotSpatialVelocity<DataVector>,
+                 // hydro::Tags::TransportVelocity<DataVector, 3,
+                 // Frame::Inertial>,
+                 Tags::LapseTimesbOverW>;
   using dg_package_data_primitive_tags = tmpl::list<>;
   using dg_package_data_volume_tags = tmpl::list<>;
   using dg_boundary_terms_volume_tags = tmpl::list<>;
@@ -181,9 +182,9 @@ class Rusanov final : public BoundaryCorrection {
 
       const Scalar<DataVector>& lapse,
       const tnsr::I<DataVector, 3, Frame::Inertial>& shift,
-      //      const Scalar<DataVector>& b_dot_sp_velocity,
+      const Scalar<DataVector>& b_dot_sp_velocity,
       //      const tnsr::I<DataVector, 3, Frame::Inertial>& tr_velocity,
-      //      const tnsr::i<DataVector, 3, Frame::Inertial>& lapse_b_over_w,
+      const tnsr::i<DataVector, 3, Frame::Inertial>& lapse_b_over_w,
 
       const tnsr::i<DataVector, 3, Frame::Inertial>& normal_covector,
       const tnsr::I<DataVector, 3, Frame::Inertial>& normal_vector,

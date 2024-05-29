@@ -102,6 +102,9 @@ std::optional<std::string> DirichletAnalytic::dg_ghost(
 
     const gsl::not_null<Scalar<DataVector>*> lapse,
     const gsl::not_null<tnsr::I<DataVector, 3, Frame::Inertial>*> shift,
+    const gsl::not_null<Scalar<DataVector>*> b_dot_sp_velocity,
+    const gsl::not_null<tnsr::i<DataVector, 3, Frame::Inertial>*>
+        lapse_b_over_w,
     const gsl::not_null<tnsr::II<DataVector, 3, Frame::Inertial>*>
         inv_spatial_metric,
 
