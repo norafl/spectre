@@ -47,9 +47,8 @@ double Hll::dg_package_data(
         packaged_largest_ingoing_char_speed,
 
     const tnsr::I<DataVector, 3, Frame::Inertial>& tilde_b,
-    const Scalar<DataVector>& tilde_phi,
-    const Scalar<DataVector>& tilde_d, const Scalar<DataVector>& tilde_ye,
-    const Scalar<DataVector>& tilde_tau,
+    const Scalar<DataVector>& tilde_phi, const Scalar<DataVector>& tilde_d,
+    const Scalar<DataVector>& tilde_ye, const Scalar<DataVector>& tilde_tau,
     const tnsr::i<DataVector, 3, Frame::Inertial>& tilde_s,
 
     const tnsr::IJ<DataVector, 3, Frame::Inertial>& flux_tilde_b,
@@ -61,6 +60,8 @@ double Hll::dg_package_data(
 
     const Scalar<DataVector>& lapse,
     const tnsr::I<DataVector, 3, Frame::Inertial>& shift,
+    const Scalar<DataVector>& b_dot_sp_velocity,
+    const tnsr::i<DataVector, 3, Frame::Inertial>& lapse_b_over_w,
 
     const tnsr::i<DataVector, 3, Frame::Inertial>& normal_covector,
     const tnsr::I<DataVector, 3, Frame::Inertial>& /*normal_vector*/,

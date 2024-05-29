@@ -13,6 +13,7 @@
 #include "NumericalAlgorithms/DiscontinuousGalerkin/Formulation.hpp"
 #include "Options/String.hpp"
 #include "PointwiseFunctions/GeneralRelativity/Tags.hpp"
+#include "PointwiseFunctions/Hydro/Tags.hpp"
 #include "Utilities/Gsl.hpp"
 #include "Utilities/Serialization/CharmPupable.hpp"
 #include "Utilities/TMPL.hpp"
@@ -124,7 +125,9 @@ class Hll final : public BoundaryCorrection {
                  ::Tags::NormalDotFlux<Tags::TildePhi>,
                  LargestOutgoingCharSpeed, LargestIngoingCharSpeed>;
   using dg_package_data_temporary_tags =
-      tmpl::list<gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, 3>>;
+      tmpl::list<gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, 3>,
+                 hydro::Tags::MagneticFieldDotSpatialVelocity<DataVector>,
+                 Tags::LapseTimesbOverW>;
   using dg_package_data_primitive_tags = tmpl::list<>;
   using dg_package_data_volume_tags = tmpl::list<>;
   using dg_boundary_terms_volume_tags = tmpl::list<>;
@@ -148,9 +151,8 @@ class Hll final : public BoundaryCorrection {
       gsl::not_null<Scalar<DataVector>*> packaged_largest_ingoing_char_speed,
 
       const tnsr::I<DataVector, 3, Frame::Inertial>& tilde_b,
-      const Scalar<DataVector>& tilde_phi,
-      const Scalar<DataVector>& tilde_d, const Scalar<DataVector>& tilde_ye,
-      const Scalar<DataVector>& tilde_tau,
+      const Scalar<DataVector>& tilde_phi, const Scalar<DataVector>& tilde_d,
+      const Scalar<DataVector>& tilde_ye, const Scalar<DataVector>& tilde_tau,
       const tnsr::i<DataVector, 3, Frame::Inertial>& tilde_s,
 
       const tnsr::IJ<DataVector, 3, Frame::Inertial>& flux_tilde_b,
@@ -162,6 +164,8 @@ class Hll final : public BoundaryCorrection {
 
       const Scalar<DataVector>& lapse,
       const tnsr::I<DataVector, 3, Frame::Inertial>& shift,
+      const Scalar<DataVector>& b_dot_sp_velocity,
+      const tnsr::i<DataVector, 3, Frame::Inertial>& lapse_b_over_w,
 
       const tnsr::i<DataVector, 3, Frame::Inertial>& normal_covector,
       const tnsr::I<DataVector, 3, Frame::Inertial>& normal_vector,
