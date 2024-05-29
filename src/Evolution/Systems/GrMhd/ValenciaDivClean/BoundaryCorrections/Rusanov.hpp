@@ -89,10 +89,10 @@ class Rusanov final : public BoundaryCorrection {
   }; /*
    struct FluxTildeD : db::SimpleTag {
      using type = tnsr::i<DataVector, 3, Frame::Inertial>;
-     };*/
+     };
   struct BDotSpatialVelocity : db::SimpleTag {
     using type = Scalar<DataVector>;
-  };
+    };*/
 
  public:
   using options = tmpl::list<>;
@@ -124,7 +124,7 @@ class Rusanov final : public BoundaryCorrection {
                  ::Tags::NormalDotFlux<Tags::TildeTau>,
                  ::Tags::NormalDotFlux<Tags::TildeS<Frame::Inertial>>,
                  ::Tags::NormalDotFlux<Tags::TildeB<Frame::Inertial>>,
-        ::Tags::NormalDotFlux<Tags::TildePhi>, AbsCharSpeed>,
+        ::Tags::NormalDotFlux<Tags::TildePhi>, AbsCharSpeed,
         hydro::Tags::MagneticFieldDotSpatialVelocity<DataVector>,
         NormalCovectorSent, LapseSent, Tags::LapseTimesbOverW,
         ::Tags::Flux<grmhd::ValenciaDivClean::Tags::TildeD,
