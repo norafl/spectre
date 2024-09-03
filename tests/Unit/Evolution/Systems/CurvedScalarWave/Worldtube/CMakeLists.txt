@@ -20,6 +20,7 @@ set(LIBRARY_SOURCES
   SingletonActions/Test_InitializeEvolvedVariables.cpp
   SingletonActions/Test_ObserveWorldtubeSolution.cpp
   SingletonActions/Test_UpdateAcceleration.cpp
+  SingletonActions/Test_UpdateFunctionsOfTime.cpp
   )
 
 add_test_library(${LIBRARY} "${LIBRARY_SOURCES}")
@@ -27,6 +28,7 @@ add_test_library(${LIBRARY} "${LIBRARY_SOURCES}")
 target_link_libraries(
   ${LIBRARY}
   PRIVATE
+  ControlSystem
   CurvedScalarWave
   CurvedScalarWaveHelpers
   DataStructures
