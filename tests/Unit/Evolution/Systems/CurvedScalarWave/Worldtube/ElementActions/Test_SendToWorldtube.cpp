@@ -122,8 +122,8 @@ struct MockMetavariables {
   using dg_element_array = MockElementArray<MockMetavariables>;
   using const_global_cache_tags =
       tmpl::list<domain::Tags::Domain<Dim>, Tags::ExcisionSphere<Dim>,
-                 Tags::ExpansionOrder, Tags::MaxIterations, Tags::Charge,
-                 Tags::Mass>;
+                 Tags::WorldtubeRadius, Tags::ExpansionOrder,
+                 Tags::MaxIterations, Tags::Charge, Tags::Mass>;
 };
 
 // This test checks that `SendToWorldtube` integrates the regular field on the
@@ -165,10 +165,11 @@ SPECTRE_TEST_CASE("Unit.CurvedScalarWave.Worldtube.SendToWorldtube", "[Unit]") {
     const auto& initial_extents = shell.initial_extents();
     // self force and therefore iterative scheme is turned off
     tuples::TaggedTuple<domain::Tags::Domain<Dim>, Tags::ExcisionSphere<Dim>,
-                        Tags::ExpansionOrder, Tags::MaxIterations, Tags::Charge,
-                        Tags::Mass>
+                        Tags::WorldtubeRadius, Tags::ExpansionOrder,
+                        Tags::MaxIterations, Tags::Charge, Tags::Mass>
         tuple_of_opts{shell.create_domain(),
                       excision_sphere,
+                      excision_sphere.radius(),
                       expansion_order,
                       static_cast<size_t>(0),
                       0.1,

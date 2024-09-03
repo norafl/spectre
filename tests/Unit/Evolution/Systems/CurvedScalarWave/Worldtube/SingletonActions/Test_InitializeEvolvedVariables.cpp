@@ -7,6 +7,7 @@
 #include "Evolution/Systems/CurvedScalarWave/Worldtube/SingletonActions/InitializeEvolvedVariables.hpp"
 #include "Framework/TestingFramework.hpp"
 #include "Time/Tags/HistoryEvolvedVariables.hpp"
+#include "Time/Tags/Time.hpp"
 #include "Time/Tags/TimeStepper.hpp"
 #include "Time/TimeSteppers/AdamsBashforth.hpp"
 #include "Time/TimeSteppers/TimeStepper.hpp"
@@ -19,21 +20,30 @@ SPECTRE_TEST_CASE(
       tmpl::list<Tags::EvolvedPosition<3>, Tags::EvolvedVelocity<3>>>;
   using dt_variables_tag = db::add_tag_prefix<::Tags::dt, variables_tag>;
   const tnsr::I<double, 3> initial_pos{{1., 2., 3.}};
+  const tnsr::I<double, 3, Frame::Grid> initial_excision_pos{{1., 2., 3.}};
   const tnsr::I<double, 3> initial_vel{{4., 5., 6.}};
   const size_t current_iteration = 77;
+  const double expiration_time = 1234.;
+  const double initial_time = 0.;
+  const double initial_wt_radius = 12345.;
+  const double wt_radius = 2.;
+  const ExcisionSphere<3> excision_sphere(wt_radius, initial_excision_pos, {});
   auto box =
       db::create<db::AddSimpleTags<
                      variables_tag, dt_variables_tag,
                      ::Tags::HistoryEvolvedVariables<variables_tag>,
                      ::Tags::ConcreteTimeStepper<TimeStepper>,
-                     Tags::InitialPositionAndVelocity, Tags::CurrentIteration>,
+                     Tags::InitialPositionAndVelocity, Tags::CurrentIteration,
+                     Tags::ExpirationTime, Tags::WorldtubeRadius, ::Tags::Time,
+                     Tags::ExcisionSphere<3>>,
                  time_stepper_ref_tags<TimeStepper>>(
           variables_tag::type{}, dt_variables_tag::type{},
           TimeSteppers::History<variables_tag::type>{},
           static_cast<std::unique_ptr<TimeStepper>>(
               std::make_unique<TimeSteppers::AdamsBashforth>(4)),
           std::array<tnsr::I<double, 3>, 2>{{initial_pos, initial_vel}},
-          current_iteration);
+          current_iteration, expiration_time, initial_wt_radius, initial_time,
+          excision_sphere);
 
   db::mutate_apply<Initialization::InitializeEvolvedVariables>(
       make_not_null(&box));
@@ -47,6 +57,8 @@ SPECTRE_TEST_CASE(
   CHECK(db::get<::Tags::HistoryEvolvedVariables<variables_tag>>(box) ==
         TimeSteppers::History<variables_tag::type>(1));
   CHECK(get<Tags::CurrentIteration>(box) == 0);
+  CHECK(get<Tags::ExpirationTime>(box) == initial_time + 1e-10);
+  CHECK(get<Tags::WorldtubeRadius>(box) == wt_radius);
 }
 }  // namespace
 }  // namespace CurvedScalarWave::Worldtube
