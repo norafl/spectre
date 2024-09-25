@@ -23,6 +23,7 @@
 #include "Domain/FunctionsOfTime/FunctionOfTime.hpp"
 #include "Domain/FunctionsOfTime/PiecewisePolynomial.hpp"
 #include "Domain/FunctionsOfTime/Tags.hpp"
+#include "Domain/MinimumGridSpacing.hpp"
 #include "Domain/Structure/ElementId.hpp"
 #include "Domain/Structure/SegmentId.hpp"
 #include "Domain/Tags.hpp"
