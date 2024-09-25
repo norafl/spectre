@@ -20,7 +20,7 @@ struct create_from_yaml;
 /// data is written to disk, since most simulations will not have full double
 /// precision accuracy on volume data and we don't need all digits to visualize
 /// the data.
-enum FloatingPointType { Float, Double };
+enum class FloatingPointType { Float, Double };
 
 std::ostream& operator<<(std::ostream& os, const FloatingPointType& t);
 
