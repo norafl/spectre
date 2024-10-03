@@ -203,7 +203,8 @@ class DummyBufferUpdater
 };
 
 class ReducedDummyBufferUpdater
-    : public WorldtubeBufferUpdater<cce_bondi_input_tags> {
+    : public WorldtubeBufferUpdater<Tags::worldtube_boundary_tags_for_writing<
+          Spectral::Swsh::Tags::SwshTransform>> {
  public:
   ReducedDummyBufferUpdater(DataVector time_buffer,
                             const gr::Solutions::KerrSchild& solution,
@@ -223,7 +224,9 @@ class ReducedDummyBufferUpdater
   explicit ReducedDummyBufferUpdater(CkMigrateMessage* /*unused*/) {}
 
   double update_buffers_for_time(
-      const gsl::not_null<Variables<cce_bondi_input_tags>*> buffers,
+      const gsl::not_null<Variables<Tags::worldtube_boundary_tags_for_writing<
+          Spectral::Swsh::Tags::SwshTransform>>*>
+          buffers,
       const gsl::not_null<size_t*> time_span_start,
       const gsl::not_null<size_t*> time_span_end, const double time,
       const size_t l_max, const size_t interpolator_length,
@@ -281,8 +284,10 @@ class ReducedDummyBufferUpdater
           shift_coefficients, dt_shift_coefficients, dr_shift_coefficients,
           lapse_coefficients, dt_lapse_coefficients, dr_lapse_coefficients,
           extraction_radius_.value_or(default_extraction_radius_), l_max);
-      tmpl::for_each<tmpl::transform<
-          cce_bondi_input_tags, tmpl::bind<db::remove_tag_prefix, tmpl::_1>>>(
+      tmpl::for_each<
+          tmpl::transform<Tags::worldtube_boundary_tags_for_writing<
+                              Spectral::Swsh::Tags::SwshTransform>,
+                          tmpl::bind<db::remove_tag_prefix, tmpl::_1>>>(
           [this, &boundary_variables, &buffers, &time_index, &time_span_end,
            &time_span_start, &l_max](auto tag_v) {
             using tag = typename decltype(tag_v)::type;
@@ -299,8 +304,10 @@ class ReducedDummyBufferUpdater
     }
     return time_buffer_[*time_span_end - interpolator_length + 1];
   }
-  std::unique_ptr<WorldtubeBufferUpdater<cce_bondi_input_tags>> get_clone()
-      const override {
+  std::unique_ptr<
+      WorldtubeBufferUpdater<Tags::worldtube_boundary_tags_for_writing<
+          Spectral::Swsh::Tags::SwshTransform>>>
+  get_clone() const override {
     return std::make_unique<ReducedDummyBufferUpdater>(*this);
   }
 
@@ -605,10 +612,14 @@ void test_reduced_spec_worldtube_buffer_updater(
   const size_t file_l_max = 8;
   const size_t computation_l_max = 10;
 
-  Variables<cce_bondi_input_tags> coefficients_buffers_from_file{
-      (buffer_size + 2 * interpolator_length) * square(computation_l_max + 1)};
-  Variables<cce_bondi_input_tags> expected_coefficients_buffers{
-      (buffer_size + 2 * interpolator_length) * square(computation_l_max + 1)};
+  Variables<Tags::worldtube_boundary_tags_for_writing<
+      Spectral::Swsh::Tags::SwshTransform>>
+      coefficients_buffers_from_file{(buffer_size + 2 * interpolator_length) *
+                                     square(computation_l_max + 1)};
+  Variables<Tags::worldtube_boundary_tags_for_writing<
+      Spectral::Swsh::Tags::SwshTransform>>
+      expected_coefficients_buffers{(buffer_size + 2 * interpolator_length) *
+                                    square(computation_l_max + 1)};
   size_t libsharp_size =
       Spectral::Swsh::size_of_libsharp_coefficient_vector(file_l_max);
   tnsr::ii<ComplexModalVector, 3> spatial_metric_coefficients{libsharp_size};
@@ -662,19 +673,8 @@ void test_reduced_spec_worldtube_buffer_updater(
           lapse_coefficients, dt_lapse_coefficients, dr_lapse_coefficients,
           extraction_radius, file_l_max);
 
-      using reduced_boundary_tags = tmpl::list<
-          Cce::Tags::BoundaryValue<Cce::Tags::BondiBeta>,
-          Cce::Tags::BoundaryValue<Cce::Tags::BondiU>,
-          Cce::Tags::BoundaryValue<Cce::Tags::BondiQ>,
-          Cce::Tags::BoundaryValue<Cce::Tags::BondiW>,
-          Cce::Tags::BoundaryValue<Cce::Tags::BondiJ>,
-          Cce::Tags::BoundaryValue<Cce::Tags::Dr<Cce::Tags::BondiJ>>,
-          Cce::Tags::BoundaryValue<Cce::Tags::Du<Cce::Tags::BondiJ>>,
-          Cce::Tags::BoundaryValue<Cce::Tags::BondiR>,
-          Cce::Tags::BoundaryValue<Cce::Tags::Du<Cce::Tags::BondiR>>>;
-
       // loop over the tags that we want to dump.
-      tmpl::for_each<reduced_boundary_tags>(
+      tmpl::for_each<Cce::Tags::worldtube_boundary_tags_for_writing<>>(
           [&recorder, &boundary_data_variables, &output_goldberg_mode_buffer,
            &output_libsharp_mode_buffer, &file_l_max, &time](auto tag_v) {
             using tag = typename decltype(tag_v)::type;
@@ -717,8 +717,11 @@ void test_reduced_spec_worldtube_buffer_updater(
       make_not_null(&time_span_start), make_not_null(&time_span_end),
       target_time, computation_l_max, interpolator_length, buffer_size);
 
-  Variables<cce_bondi_input_tags> coefficients_buffers_from_serialized{
-      (buffer_size + 2 * interpolator_length) * square(computation_l_max + 1)};
+  Variables<Tags::worldtube_boundary_tags_for_writing<
+      Spectral::Swsh::Tags::SwshTransform>>
+      coefficients_buffers_from_serialized{
+          (buffer_size + 2 * interpolator_length) *
+          square(computation_l_max + 1)};
   size_t time_span_start_from_serialized = 0;
   size_t time_span_end_from_serialized = 0;
   serialized_and_deserialized_updater.update_buffers_for_time(
@@ -761,7 +764,8 @@ void test_reduced_spec_worldtube_buffer_updater(
           .scale(1.0);
 
   // check that the data in the buffer matches the expected analytic data.
-  tmpl::for_each<cce_bondi_input_tags>(
+  tmpl::for_each<Tags::worldtube_boundary_tags_for_writing<
+      Spectral::Swsh::Tags::SwshTransform>>(
       [&expected_coefficients_buffers, &coefficients_buffers_from_file,
        &coefficients_buffers_from_serialized, &modal_approx](auto tag_v) {
         using tag = typename decltype(tag_v)::type;
@@ -787,7 +791,8 @@ SPECTRE_TEST_CASE("Unit.Evolution.Systems.Cce.ReadBoundaryDataH5",
   register_derived_classes_with_charm<
       Cce::WorldtubeBufferUpdater<cce_metric_input_tags>>();
   register_derived_classes_with_charm<
-      Cce::WorldtubeBufferUpdater<cce_bondi_input_tags>>();
+      Cce::WorldtubeBufferUpdater<Tags::worldtube_boundary_tags_for_writing<
+          Spectral::Swsh::Tags::SwshTransform>>>();
   register_derived_classes_with_charm<Cce::WorldtubeDataManager<
       Cce::Tags::characteristic_worldtube_boundary_tags<
           Cce::Tags::BoundaryValue>>>();
