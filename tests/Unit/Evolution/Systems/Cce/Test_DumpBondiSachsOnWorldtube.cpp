@@ -18,6 +18,7 @@
 #include "Evolution/Systems/Cce/Callbacks/DumpBondiSachsOnWorldtube.hpp"
 #include "Evolution/Systems/Cce/Components/CharacteristicEvolution.hpp"
 #include "Evolution/Systems/Cce/OptionTags.hpp"
+#include "Evolution/Systems/Cce/WorldtubeModeRecorder.hpp"
 #include "Evolution/Systems/GeneralizedHarmonic/Tags.hpp"
 #include "Framework/ActionTesting.hpp"
 #include "Framework/TestHelpers.hpp"
@@ -76,18 +77,6 @@ std::string get_filename(const std::string& filename_prefix,
                          const double radius) {
   return MakeString{} << filename_prefix << "CceR" << std::setfill('0')
                       << std::setw(4) << std::lround(radius) << ".h5";
-}
-
-std::string replace_name(const std::string& db_tag_name) {
-  if (db_tag_name == "BondiBeta") {
-    return "Beta";
-  } else if (db_tag_name == "Dr(J)") {
-    return "DrJ";
-  } else if (db_tag_name == "Du(R)") {
-    return "DuR";
-  } else {
-    return db_tag_name;
-  }
 }
 
 template <typename Tags>
@@ -206,7 +195,7 @@ void test(const std::string& filename_prefix,
               Spectral::Swsh::swsh_transform(l_max, 1, bondi_data), l_max);
 
           const std::string tag_path =
-              "/" + replace_name(db::tag_name<typename tag::tag>());
+              Cce::dataset_label_for_tag<typename tag::tag>();
           CAPTURE(tag_path);
           const auto& dat_file = file.get<h5::Dat>(tag_path);
           const Matrix written_data = dat_file.get_data();
