@@ -59,6 +59,7 @@ namespace dg::Events {
  * - InertialCoordinates (only element corners)
  * - Time step
  * - Slab fraction
+ * - Minimum grid spacing
  */
 template <size_t VolumeDim>
 class ObserveTimeStepVolume : public ObserveConstantsPerElement<VolumeDim> {
