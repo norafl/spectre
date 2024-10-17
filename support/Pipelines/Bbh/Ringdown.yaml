@@ -18,7 +18,7 @@ InitialData:
     Subgroup: "{{ IdFileGlobSubgroup }}"
     ObservationValue: &InitialTime "{{ MatchTime }}"
     ObservationValueEpsilon: Auto
-    Interpolate: True
+    ElementsAreIdentical: False
     Variables:
       SpacetimeMetric: SpacetimeMetric
       Pi: Pi
