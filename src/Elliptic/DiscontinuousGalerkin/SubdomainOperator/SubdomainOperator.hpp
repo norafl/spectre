@@ -193,6 +193,7 @@ struct SubdomainOperator
   // when evaluating neighbors
   using args_tags_from_center = tmpl::remove_duplicates<tmpl::push_back<
       elliptic::get_fluxes_const_global_cache_tags<System, linearized>,
+      elliptic::get_sources_const_global_cache_tags<System, linearized>,
       elliptic::dg::Tags::Massive, elliptic::dg::Tags::Formulation>>;
 
   // Data on neighbors is stored in the central element's DataBox in
