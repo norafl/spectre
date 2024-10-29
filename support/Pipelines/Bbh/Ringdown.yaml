@@ -196,7 +196,7 @@ PhaseChangeAndTriggers:
       - CheckpointAndExitAfterWallclock:
           WallclockHours: 23.5
 
-EventsAndTriggers:
+EventsAndTriggersAtSlabs:
   - Trigger:
       Slabs:
         EvenlySpaced:

@@ -155,7 +155,7 @@ LinearSolver:
 
 RadiallyCompressedCoordinates: None
 
-EventsAndTriggers:
+EventsAndTriggersAtIterations:
   - Trigger: Always
     Events:
       - ObserveNorms:

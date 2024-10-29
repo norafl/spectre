@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -17,6 +18,7 @@
 #include "DataStructures/DataBox/DataBoxTag.hpp"
 #include "Options/String.hpp"
 #include "ParallelAlgorithms/EventsAndTriggers/EventsAndTriggers.hpp"
+#include "ParallelAlgorithms/EventsAndTriggers/WhenToCheck.hpp"
 #include "Time/ChangeSlabSize/Event.hpp"
 #include "Time/StepChoosers/StepChooser.hpp"
 #include "Time/StepperErrorTolerances.hpp"
@@ -31,6 +33,7 @@
 
 /// \cond
 namespace Tags {
+template <Triggers::WhenToCheck WhenToCheck>
 struct EventsAndTriggers;
 template <bool LocalTimeStepping>
 struct IsUsingTimeSteppingErrorControlCompute;
@@ -280,9 +283,9 @@ struct IsUsingTimeSteppingErrorControlCompute
     IsUsingTimeSteppingErrorControl {
   using base = IsUsingTimeSteppingErrorControl;
   using return_type = type;
-  using argument_tags =
-      tmpl::conditional_t<LocalTimeStepping, tmpl::list<::Tags::StepChoosers>,
-                          tmpl::list<::Tags::EventsAndTriggers>>;
+  using argument_tags = tmpl::conditional_t<
+      LocalTimeStepping, tmpl::list<::Tags::StepChoosers>,
+      tmpl::list<::Tags::EventsAndTriggers<Triggers::WhenToCheck::AtSlabs>>>;
 
   // local time stepping
   static void function(
@@ -340,9 +343,9 @@ struct StepperErrorTolerancesCompute
       StepperErrorTolerances<EvolvedVariableTag> {
   using base = StepperErrorTolerances<EvolvedVariableTag>;
   using return_type = typename base::type;
-  using argument_tags =
-      tmpl::conditional_t<LocalTimeStepping, tmpl::list<::Tags::StepChoosers>,
-                          tmpl::list<::Tags::EventsAndTriggers>>;
+  using argument_tags = tmpl::conditional_t<
+      LocalTimeStepping, tmpl::list<::Tags::StepChoosers>,
+      tmpl::list<::Tags::EventsAndTriggers<Triggers::WhenToCheck::AtSlabs>>>;
 
   // local time stepping
   static void function(

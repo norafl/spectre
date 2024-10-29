@@ -26,6 +26,7 @@
 #include "ParallelAlgorithms/EventsAndTriggers/LogicalTriggers.hpp"
 #include "ParallelAlgorithms/EventsAndTriggers/Tags.hpp"
 #include "ParallelAlgorithms/EventsAndTriggers/Trigger.hpp"
+#include "ParallelAlgorithms/EventsAndTriggers/WhenToCheck.hpp"
 #include "Time/ChangeSlabSize/Event.hpp"
 #include "Time/Slab.hpp"
 #include "Time/StepChoosers/Constant.hpp"
@@ -415,15 +416,16 @@ void test_tags() {
   {
     INFO("Compute tag GTS test");
     auto box = db::create<
-        db::AddSimpleTags<Tags::EventsAndTriggers>,
+        db::AddSimpleTags<
+            Tags::EventsAndTriggers<Triggers::WhenToCheck::AtSlabs>>,
         db::AddComputeTags<
             Tags::IsUsingTimeSteppingErrorControlCompute<false>,
             Tags::StepperErrorTolerancesCompute<EvolvedVariablesTag, false>,
             Tags::StepperErrorTolerancesCompute<AltEvolvedVariablesTag,
                                                 false>>>();
-    db::mutate<Tags::EventsAndTriggers>(
-        [](const gsl::not_null<Tags::EventsAndTriggers::type*> events) {
-          *events = TestHelpers::test_creation<Tags::EventsAndTriggers::type,
+    db::mutate<Tags::EventsAndTriggers<Triggers::WhenToCheck::AtSlabs>>(
+        [](const gsl::not_null<EventsAndTriggers*> events) {
+          *events = TestHelpers::test_creation<EventsAndTriggers,
                                                Metavariables<true, true>>(
               "- Trigger: Always\n"
               "  Events:\n"
@@ -451,9 +453,9 @@ void test_tags() {
     CHECK(not db::get<Tags::StepperErrorTolerances<AltEvolvedVariablesTag>>(box)
                   .has_value());
 
-    db::mutate<Tags::EventsAndTriggers>(
-        [](const gsl::not_null<Tags::EventsAndTriggers::type*> events) {
-          *events = TestHelpers::test_creation<Tags::EventsAndTriggers::type,
+    db::mutate<Tags::EventsAndTriggers<Triggers::WhenToCheck::AtSlabs>>(
+        [](const gsl::not_null<EventsAndTriggers*> events) {
+          *events = TestHelpers::test_creation<EventsAndTriggers,
                                                Metavariables<true, true>>(
               "- Trigger: Always\n"
               "  Events:\n"
@@ -475,9 +477,9 @@ void test_tags() {
     CHECK(not db::get<Tags::StepperErrorTolerances<AltEvolvedVariablesTag>>(box)
                   .has_value());
 
-    db::mutate<Tags::EventsAndTriggers>(
-        [](const gsl::not_null<Tags::EventsAndTriggers::type*> events) {
-          *events = TestHelpers::test_creation<Tags::EventsAndTriggers::type,
+    db::mutate<Tags::EventsAndTriggers<Triggers::WhenToCheck::AtSlabs>>(
+        [](const gsl::not_null<EventsAndTriggers*> events) {
+          *events = TestHelpers::test_creation<EventsAndTriggers,
                                                Metavariables<true, true>>(
               "- Trigger: Always\n"
               "  Events:\n"
@@ -493,9 +495,9 @@ void test_tags() {
     CHECK(not db::get<Tags::StepperErrorTolerances<AltEvolvedVariablesTag>>(box)
                   .has_value());
 
-    db::mutate<Tags::EventsAndTriggers>(
-        [](const gsl::not_null<Tags::EventsAndTriggers::type*> events) {
-          *events = TestHelpers::test_creation<Tags::EventsAndTriggers::type,
+    db::mutate<Tags::EventsAndTriggers<Triggers::WhenToCheck::AtSlabs>>(
+        [](const gsl::not_null<EventsAndTriggers*> events) {
+          *events = TestHelpers::test_creation<EventsAndTriggers,
                                                Metavariables<true, true>>("");
         },
         make_not_null(&box));

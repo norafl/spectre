@@ -120,7 +120,7 @@ LinearSolver:
 
 RadiallyCompressedCoordinates: None
 
-EventsAndTriggers:
+EventsAndTriggersAtIterations:
   - Trigger: HasConverged
     Events:
       - ObserveNorms:

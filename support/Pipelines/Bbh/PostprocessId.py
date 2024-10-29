@@ -93,7 +93,7 @@ def postprocess_id(
     excision_radius_B = id_domain[f"ObjectB"]["InnerRadius"]
     volfile_name = id_input_file["Observers"]["VolumeFileName"]
     id_subfile_name = find_event(
-        "ObserveFields", "EventsAndTriggers", id_input_file
+        "ObserveFields", "EventsAndTriggersAtIterations", id_input_file
     )["SubfileName"]
 
     # Find latest observation in output data

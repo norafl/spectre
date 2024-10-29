@@ -167,7 +167,7 @@ Filtering:
     BlocksToFilter: All
 
 
-EventsAndTriggers:
+EventsAndTriggersAtSlabs:
   - Trigger:
       Slabs:
         EvenlySpaced:

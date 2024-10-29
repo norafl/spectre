@@ -10,6 +10,7 @@
 #include "Parallel/AlgorithmExecution.hpp"
 #include "Parallel/GlobalCache.hpp"
 #include "ParallelAlgorithms/EventsAndTriggers/Tags.hpp"
+#include "ParallelAlgorithms/EventsAndTriggers/WhenToCheck.hpp"
 #include "Time/SelfStart.hpp"
 #include "Time/Tags/Time.hpp"
 #include "Time/Triggers/OnSubsteps.hpp"
@@ -41,7 +42,8 @@ namespace evolution::Actions {
 /// - Removes: nothing
 /// - Modifies: nothing
 struct RunEventsAndTriggers {
-  using const_global_cache_tags = tmpl::list<::Tags::EventsAndTriggers>;
+  using const_global_cache_tags =
+      tmpl::list<::Tags::EventsAndTriggers<Triggers::WhenToCheck::AtSlabs>>;
 
   template <typename DbTags, typename... InboxTags, typename Metavariables,
             typename ArrayIndex, typename ActionList,
@@ -56,17 +58,17 @@ struct RunEventsAndTriggers {
         not time_step_id.step_time().is_at_slab_boundary()) {
       return {Parallel::AlgorithmExecution::Continue, std::nullopt};
     }
-
+    const auto& events_and_triggers_at_slabs = Parallel::get<
+        ::Tags::EventsAndTriggers<Triggers::WhenToCheck::AtSlabs>>(cache);
     if (time_step_id.substep() == 0) {
-      Parallel::get<::Tags::EventsAndTriggers>(cache).run_events(
+      events_and_triggers_at_slabs.run_events(
           make_not_null(&box), cache, array_index, component,
           {db::tag_name<::Tags::Time>(), db::get<::Tags::Time>(box)});
     } else {
       const double substep_offset = 1.0e6;
       const double observation_value = time_step_id.step_time().value() +
                                        substep_offset * time_step_id.substep();
-
-      Parallel::get<::Tags::EventsAndTriggers>(cache).run_events(
+      events_and_triggers_at_slabs.run_events(
           make_not_null(&box), cache, array_index, component,
           {db::tag_name<::Tags::Time>(), observation_value},
           [&box](const Trigger& trigger) {

@@ -67,7 +67,7 @@ Filtering:
     Enable: false
     BlocksToFilter: All
 
-EventsAndTriggers:
+EventsAndTriggersAtSlabs:
   - Trigger:
       Slabs:
         Specified:
