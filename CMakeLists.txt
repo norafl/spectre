@@ -44,6 +44,11 @@ endif()
 if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
   cmake_policy(SET CMP0135 NEW)
 endif()
+# - We allow CMake 3.30 and above to load Boost's CMake config file that is
+#   installed alongside Boost. Before, CMake provided its own FindBoost module.
+if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.30)
+  cmake_policy(SET CMP0167 NEW)
+endif ()
 
 # FetchContent can be used to download and build some dependencies. We can
 # consider turning this on by default later.
