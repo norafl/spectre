@@ -135,8 +135,7 @@ struct EvolutionMetavars {
   using analytic_variables_tags =
       typename system::primitive_variables_tag::tags_list;
 
-  using equation_of_state_tag =
-      hydro::Tags::EquationOfState<equation_of_state_type>;
+  using equation_of_state_tag = hydro::Tags::EquationOfState<true, 2>;
 
   using limiter = Tags::Limiter<Limiters::Minmod<
       Dim, tmpl::list<RelativisticEuler::Valencia::Tags::TildeD,
