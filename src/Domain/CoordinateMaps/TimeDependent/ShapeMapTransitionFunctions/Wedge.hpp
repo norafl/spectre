@@ -47,6 +47,12 @@ namespace domain::CoordinateMaps::ShapeMapTransitionFunctions {
  * \label{eq:transition_func_reverse}
  * \end{equation}
  *
+ * The function is also defined beyond $D_{\text{in}}(r, \theta, \phi)$ and
+ * $D_{\text{out}}(r, \theta, \phi)$, but slighly differently. Within
+ * $D_{\text{in}}(r, \theta, \phi)$, $f(r, \theta, \phi) = 1$ and beyond
+ * $D_{\text{out}}(r, \theta, \phi)$, $f(r, \theta, \phi) = 0$. If \p reverse is
+ * true, this logic is flipped.
+ *
  * Here, $s$ is the sphericity of the surface which goes from 0 (flat) to 1
  * (spherical), $R$ is the radius of the spherical surface, $\text{out}$ is the
  * outer surface, and $\text{in}$ is the inner surface. If the sphericity is 1,
@@ -242,6 +248,18 @@ namespace domain::CoordinateMaps::ShapeMapTransitionFunctions {
  *
  * \endparblock
  *
+ * \parblock
+ *
+ * \note If we are inside the inner surface, then this simplifies to
+ * \begin{equation}
+ * \frac{r}{\tilde{r}} = 1 + \frac{\Sigma(\theta, \phi)}{\tilde{r}}
+ * \end{equation}
+ * because $f(r, \theta, \phi) = 1$. If we are outside the outer surface, then
+ * $r/\tilde{r} = 1$ because $f(r, \theta, \phi) = 0$. If \p reverse is true,
+ * this logic is reversed.
+ *
+ * \endparblock
+ *
  * ## Gradient
  *
  * The cartesian gradient of the transition function is
@@ -256,6 +274,13 @@ namespace domain::CoordinateMaps::ShapeMapTransitionFunctions {
  * \end{equation}
  *
  * \note If \p reverse is true, the gradient picks up an overall factor of -1.0.
+ *
+ * \parblock
+ *
+ * \note The gradient is not supported if points lie beyond the inner or outer
+ * surface.
+ *
+ * \endparblock
  *
  * Therefore, we need to compute the gradients of $\vec x_0$ and $\vec x_1$.
  *
@@ -492,7 +517,8 @@ class Wedge final : public ShapeMapTransitionFunction {
   template <typename T>
   void check_distances(const T& inner_distance, const T& outer_distance,
                        const T& centered_coords_magnitude,
-                       const std::array<T, 3>& source_coords) const;
+                       const std::array<T, 3>& source_coords,
+                       bool check_bounds) const;
 
   Surface inner_surface_{};
   Surface outer_surface_{};

@@ -26,9 +26,14 @@ namespace domain::CoordinateMaps::ShapeMapTransitionFunctions {
  * r_{\text{max}}
  * \f}
  *
- * If the `reverse` flag is set to `true`, then the function falls off from 0 at
+ * If \p reverse is set to `true`, then the function falls off from 0 at
  * `r_min` to 1 at `r_max`. To do this, the coefficients are modified as
  * $a \rightarrow -a$ and $b \rightarrow 1-b$.
+ *
+ * The function can be called beyond `r_min` and `r_max`. Within `r_min` the
+ * value is 1, and outside `r_max` the value is 0. This is reversed if \p
+ * reverse is true. However, the gradient function cannot be called with a point
+ * beyond `r_min` and `r_max`.
  */
 class SphereTransition final : public ShapeMapTransitionFunction {
  public:
@@ -68,7 +73,7 @@ class SphereTransition final : public ShapeMapTransitionFunction {
 
   // checks that the magnitudes are all between `r_min_` and `r_max_`
   template <typename T>
-  void check_magnitudes(const T& mag) const;
+  void check_magnitudes(const T& mag, bool check_bounds) const;
 
   double r_min_{};
   double r_max_{};
