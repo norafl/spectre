@@ -37,6 +37,16 @@ namespace domain::CoordinateMaps::ShapeMapTransitionFunctions {
  * \label{eq:distance}
  * \end{equation}
  *
+ * \note If \p reverse is true, then the functional form of the transition is
+ * actually
+ * \begin{equation}
+ * f(r, \theta, \phi) = 1 - \frac{D_{\text{out}}(r, \theta, \phi) -
+ * r}{D_{\text{out}}(r, \theta, \phi) - D_{\text{in}}(r, \theta, \phi)} =
+ * \frac{r - \frac{D_{\text{in}}(r, \theta, \phi)}
+ * {D_{\text{out}}(r, \theta, \phi) - D_{\text{in}}(r, \theta, \phi)}.
+ * \label{eq:transition_func_reverse}
+ * \end{equation}
+ *
  * Here, $s$ is the sphericity of the surface which goes from 0 (flat) to 1
  * (spherical), $R$ is the radius of the spherical surface, $\text{out}$ is the
  * outer surface, and $\text{in}$ is the inner surface. If the sphericity is 1,
@@ -224,6 +234,14 @@ namespace domain::CoordinateMaps::ShapeMapTransitionFunctions {
  * the radius, we can use $\tilde{\vec x}$ in Eq. $\ref{eq:x_0_vector}$ instead
  * of $\vec x$.
  *
+ * \parblock
+ *
+ * \note If \p reverse is true, then the value multiplying $\Sigma$ in the
+ * numerator is now $-|\vec x_0 - \vec P|$ and in the denomintor $\Sigma$ picks
+ * up a minus sign factor.
+ *
+ * \endparblock
+ *
  * ## Gradient
  *
  * The cartesian gradient of the transition function is
@@ -236,6 +254,8 @@ namespace domain::CoordinateMaps::ShapeMapTransitionFunctions {
  * \frac{\partial |\vec x_0 - \vec P|}{\partial x_i} \right)}{\left(|\vec x_1 -
  * \vec P| - |\vec x_0 - \vec P|\right)^2}.
  * \end{equation}
+ *
+ * \note If \p reverse is true, the gradient picks up an overall factor of -1.0.
  *
  * Therefore, we need to compute the gradients of $\vec x_0$ and $\vec x_1$.
  *
