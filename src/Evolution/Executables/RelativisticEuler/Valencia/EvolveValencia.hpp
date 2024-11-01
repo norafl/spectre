@@ -269,13 +269,13 @@ struct EvolutionMetavars {
 
           Parallel::PhaseActions<
               Parallel::Phase::Evolve,
-              tmpl::list<VariableFixing::Actions::FixVariables<
-                             VariableFixing::FixToAtmosphere<volume_dim>>,
-                         Actions::UpdateConservatives,
-                         evolution::Actions::RunEventsAndTriggers,
-                         Actions::ChangeSlabSize, step_actions,
-                         Actions::AdvanceTime,
-                         PhaseControl::Actions::ExecutePhaseChange>>>>;
+              tmpl::list<
+                  VariableFixing::Actions::FixVariables<
+                      VariableFixing::FixToAtmosphere<volume_dim>>,
+                  Actions::UpdateConservatives,
+                  evolution::Actions::RunEventsAndTriggers<local_time_stepping>,
+                  Actions::ChangeSlabSize, step_actions, Actions::AdvanceTime,
+                  PhaseControl::Actions::ExecutePhaseChange>>>>;
 
   struct registration
       : tt::ConformsTo<Parallel::protocols::RegistrationMetavariables> {

@@ -235,6 +235,8 @@ EventsAndTriggersAtSlabs:
     Events:
       - Completion
 
+EventsAndTriggersAtSteps:
+
 Observers:
   VolumeFileName: "GhBinaryBlackHoleVolumeData"
   ReductionFileName: "GhBinaryBlackHoleReductionData"

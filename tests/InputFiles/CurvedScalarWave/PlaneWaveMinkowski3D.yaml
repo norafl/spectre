@@ -134,6 +134,8 @@ EventsAndTriggersAtSlabs:
               NormType: L2Norm
               Components: Individual
 
+EventsAndTriggersAtSteps:
+
 EventsAndDenseTriggers:
 
 InterpolationTargets:

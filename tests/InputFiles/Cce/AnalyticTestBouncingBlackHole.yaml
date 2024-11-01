@@ -47,6 +47,8 @@ EventsAndTriggersAtSlabs:
           SubfileName: CceTimeStep
           PrintTimeToTerminal: false
 
+EventsAndTriggersAtSteps:
+
 Cce:
   Evolution:
     TimeStepper:

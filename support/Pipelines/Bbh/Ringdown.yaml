@@ -266,6 +266,8 @@ EventsAndTriggersAtSlabs:
     Events:
       - Completion
 
+EventsAndTriggersAtSteps:
+
 EventsAndDenseTriggers:
   # BondiSachs output needs to be often enough for CCE to run properly. An
   # interval of 0.1 was found to work well in SpEC.
