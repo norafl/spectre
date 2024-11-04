@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 
+#include "DataStructures/DataBox/DataBox.hpp"
 #include "Domain/Amr/Flag.hpp"
 #include "Domain/Structure/ElementId.hpp"
 #include "Domain/Tags.hpp"
@@ -137,6 +138,23 @@ void test(const Event& event) {
     CHECK(ActionTesting::get_databox_tag<element_component,
                                          domain::Tags::Element<1>>(
               runner, element_id) == element);
+
+    const amr::Policies error_policies{amr::Isotropy::Anisotropic,
+                                       amr::Limits{{{0, 0}}, {{3, 5}}, true},
+                                       true};
+    db::mutate<amr::Tags::Policies>(
+        [&](const gsl::not_null<amr::Policies*> box_policies) {
+          *box_policies = error_policies;
+        },
+        make_not_null(&box));
+
+    CHECK_THROWS_WITH(
+        (event.run(make_not_null(&obs_box),
+                   ActionTesting::cache<element_component>(runner, element_id),
+                   element_id, std::add_pointer_t<element_component>{},
+                   {"Unused", -1.0})),
+        Catch::Matchers::ContainsSubstring(
+            "Tried refining beyond the AMR limits in element"));
   }
 
   {
