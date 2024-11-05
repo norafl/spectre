@@ -50,9 +50,7 @@ using combined_coords_frame_velocity_jacs_t =
         std::declval<
             gsl::not_null<tnsr::Ij<DataVector, Dim, Frame::NoFrame>*>>(),
         std::declval<const double>(),
-        std::declval<const std::unordered_map<
-            std::string,
-            std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&>()));
+        std::declval<const FunctionsOfTimeMap&>()));
 
 template <size_t Dim, typename T, typename = std::void_t<>>
 struct has_combined_coords_frame_velocity_jacs : std::false_type {};
@@ -150,9 +148,7 @@ bool CoordinateMap<SourceFrame, TargetFrame,
 
 template <typename SourceFrame, typename TargetFrame, typename... Maps>
 void CoordinateMap<SourceFrame, TargetFrame, Maps...>::check_functions_of_time(
-    [[maybe_unused]] const std::unordered_map<
-        std::string, std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-        functions_of_time) const {
+    [[maybe_unused]] const FunctionsOfTimeMap& functions_of_time) const {
 // Even though an assert is already in debug mode, we also want to avoid the
 // loop
 #ifdef SPECTRE_DEBUG
@@ -171,29 +167,24 @@ template <typename T, size_t... Is>
 tnsr::I<T, CoordinateMap<SourceFrame, TargetFrame, Maps...>::dim, TargetFrame>
 CoordinateMap<SourceFrame, TargetFrame, Maps...>::call_impl(
     tnsr::I<T, dim, SourceFrame>&& source_point, const double time,
-    const std::unordered_map<
-        std::string, std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-        functions_of_time,
+    const FunctionsOfTimeMap& functions_of_time,
     std::index_sequence<Is...> /*meta*/) const {
   check_functions_of_time(functions_of_time);
   std::array<T, dim> mapped_point = make_array<T, dim>(std::move(source_point));
 
-  EXPAND_PACK_LEFT_TO_RIGHT(
-      [](const auto& the_map, std::array<T, dim>& point, const double t,
-         const std::unordered_map<
-             std::string,
-             std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-             funcs_of_time) {
-        if constexpr (domain::is_map_time_dependent_t<decltype(the_map)>{}) {
-          point = the_map(point, t, funcs_of_time);
-        } else {
-          (void)t;
-          (void)funcs_of_time;
-          if (LIKELY(not the_map.is_identity())) {
-            point = the_map(point);
-          }
-        }
-      }(std::get<Is>(maps_), mapped_point, time, functions_of_time));
+  EXPAND_PACK_LEFT_TO_RIGHT([](const auto& the_map, std::array<T, dim>& point,
+                               const double t,
+                               const FunctionsOfTimeMap& funcs_of_time) {
+    if constexpr (domain::is_map_time_dependent_t<decltype(the_map)>{}) {
+      point = the_map(point, t, funcs_of_time);
+    } else {
+      (void)t;
+      (void)funcs_of_time;
+      if (LIKELY(not the_map.is_identity())) {
+        point = the_map(point);
+      }
+    }
+  }(std::get<Is>(maps_), mapped_point, time, functions_of_time));
 
   return tnsr::I<T, dim, TargetFrame>(std::move(mapped_point));
 }
@@ -204,9 +195,7 @@ std::optional<tnsr::I<T, CoordinateMap<SourceFrame, TargetFrame, Maps...>::dim,
                       SourceFrame>>
 CoordinateMap<SourceFrame, TargetFrame, Maps...>::inverse_impl(
     tnsr::I<T, dim, TargetFrame>&& target_point, const double time,
-    const std::unordered_map<
-        std::string, std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-        functions_of_time,
+    const FunctionsOfTimeMap& functions_of_time,
     std::index_sequence<Is...> /*meta*/) const {
   check_functions_of_time(functions_of_time);
   std::optional<std::array<T, dim>> mapped_point(
@@ -214,11 +203,7 @@ CoordinateMap<SourceFrame, TargetFrame, Maps...>::inverse_impl(
 
   EXPAND_PACK_LEFT_TO_RIGHT(
       [](const auto& the_map, std::optional<std::array<T, dim>>& point,
-         const double t,
-         const std::unordered_map<
-             std::string,
-             std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-             funcs_of_time) {
+         const double t, const FunctionsOfTimeMap& funcs_of_time) {
         if constexpr (domain::is_map_time_dependent_t<decltype(the_map)>{}) {
           if (point.has_value()) {
             point = the_map.inverse(point.value(), t, funcs_of_time);
@@ -247,8 +232,7 @@ template <typename T, typename Map, size_t Dim>
 void get_jacobian(
     const gsl::not_null<tnsr::Ij<T, Dim, Frame::NoFrame>*> no_frame_jac,
     const Map& the_map, const std::array<T, Dim>& point, const double /*t*/,
-    const std::unordered_map<
-        std::string, std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
+    const FunctionsOfTimeMap&
     /*funcs_of_time*/,
     std::false_type /*jacobian_is_time_dependent*/) {
   if (LIKELY(not the_map.is_identity())) {
@@ -262,9 +246,7 @@ template <typename T, typename Map, size_t Dim>
 void get_jacobian(
     const gsl::not_null<tnsr::Ij<T, Dim, Frame::NoFrame>*> no_frame_jac,
     const Map& the_map, const std::array<T, Dim>& point, const double t,
-    const std::unordered_map<
-        std::string, std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-        funcs_of_time,
+    const FunctionsOfTimeMap& funcs_of_time,
     std::true_type /*jacobian_is_time_dependent*/) {
   *no_frame_jac = the_map.jacobian(point, t, funcs_of_time);
 }
@@ -273,8 +255,7 @@ template <typename T, typename Map, size_t Dim>
 void get_inv_jacobian(
     const gsl::not_null<tnsr::Ij<T, Dim, Frame::NoFrame>*> no_frame_inv_jac,
     const Map& the_map, const std::array<T, Dim>& point, const double /*t*/,
-    const std::unordered_map<
-        std::string, std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
+    const FunctionsOfTimeMap&
     /*funcs_of_time*/,
     std::false_type /*jacobian_is_time_dependent*/) {
   if (LIKELY(not the_map.is_identity())) {
@@ -288,9 +269,7 @@ template <typename T, typename Map, size_t Dim>
 void get_inv_jacobian(
     const gsl::not_null<tnsr::Ij<T, Dim, Frame::NoFrame>*> no_frame_inv_jac,
     const Map& the_map, const std::array<T, Dim>& point, const double t,
-    const std::unordered_map<
-        std::string, std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-        funcs_of_time,
+    const FunctionsOfTimeMap& funcs_of_time,
     std::true_type /*jacobian_is_time_dependent*/) {
   *no_frame_inv_jac = the_map.inv_jacobian(point, t, funcs_of_time);
 }
@@ -339,9 +318,7 @@ template <typename SourceFrame, typename TargetFrame, typename... Maps>
 template <typename T>
 auto CoordinateMap<SourceFrame, TargetFrame, Maps...>::inv_jacobian_impl(
     tnsr::I<T, dim, SourceFrame>&& source_point, const double time,
-    const std::unordered_map<
-        std::string, std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-        functions_of_time) const
+    const FunctionsOfTimeMap& functions_of_time) const
     -> InverseJacobian<T, dim, SourceFrame, TargetFrame> {
   check_functions_of_time(functions_of_time);
   std::array<T, dim> mapped_point = make_array<T, dim>(std::move(source_point));
@@ -388,9 +365,8 @@ template <typename SourceFrame, typename TargetFrame, typename... Maps>
 template <typename T>
 auto CoordinateMap<SourceFrame, TargetFrame, Maps...>::jacobian_impl(
     tnsr::I<T, dim, SourceFrame>&& source_point, const double time,
-    const std::unordered_map<
-        std::string, std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-        functions_of_time) const -> Jacobian<T, dim, SourceFrame, TargetFrame> {
+    const FunctionsOfTimeMap& functions_of_time) const
+    -> Jacobian<T, dim, SourceFrame, TargetFrame> {
   check_functions_of_time(functions_of_time);
   std::array<T, dim> mapped_point = make_array<T, dim>(std::move(source_point));
   Jacobian<T, dim, SourceFrame, TargetFrame> jac{};
@@ -434,20 +410,16 @@ template <typename T, typename Map, size_t Dim,
           Requires<not domain::is_map_time_dependent_v<Map>> = nullptr>
 std::array<T, Dim> get_frame_velocity(
     const Map& /*the_map*/, const std::array<T, Dim>& /*point*/,
-    const double /*t*/,
-    const std::unordered_map<
-        std::string, std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-    /*funcs_of_time*/) {
+    const double /*t*/, const FunctionsOfTimeMap& /*funcs_of_time*/) {
   return std::array<T, Dim>{};
 }
 
 template <typename T, typename Map, size_t Dim,
           Requires<domain::is_map_time_dependent_v<Map>> = nullptr>
-std::array<T, Dim> get_frame_velocity(
-    const Map& the_map, const std::array<T, Dim>& point, const double t,
-    const std::unordered_map<
-        std::string, std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-        funcs_of_time) {
+std::array<T, Dim> get_frame_velocity(const Map& the_map,
+                                      const std::array<T, Dim>& point,
+                                      const double t,
+                                      const FunctionsOfTimeMap& funcs_of_time) {
   return the_map.frame_velocity(point, t, funcs_of_time);
 }
 }  // namespace detail
@@ -457,10 +429,7 @@ template <typename T>
 auto CoordinateMap<SourceFrame, TargetFrame, Maps...>::
     coords_frame_velocity_jacobians_impl(
         tnsr::I<T, dim, SourceFrame> source_point, const double time,
-        const std::unordered_map<
-            std::string,
-            std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-            functions_of_time) const
+        const FunctionsOfTimeMap& functions_of_time) const
     -> std::tuple<tnsr::I<T, dim, TargetFrame>,
                   InverseJacobian<T, dim, SourceFrame, TargetFrame>,
                   Jacobian<T, dim, SourceFrame, TargetFrame>,

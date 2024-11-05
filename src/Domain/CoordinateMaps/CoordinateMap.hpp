@@ -93,23 +93,11 @@ class CoordinateMapBase : public PUP::able {
   virtual tnsr::I<double, Dim, TargetFrame> operator()(
       tnsr::I<double, Dim, SourceFrame> source_point,
       double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const = 0;
+      const FunctionsOfTimeMap& functions_of_time = {}) const = 0;
   virtual tnsr::I<DataVector, Dim, TargetFrame> operator()(
       tnsr::I<DataVector, Dim, SourceFrame> source_point,
       double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const = 0;
+      const FunctionsOfTimeMap& functions_of_time = {}) const = 0;
   /// @}
 
   /// @{
@@ -125,13 +113,7 @@ class CoordinateMapBase : public PUP::able {
   virtual std::optional<tnsr::I<double, Dim, SourceFrame>> inverse(
       tnsr::I<double, Dim, TargetFrame> target_point,
       double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const = 0;
+      const FunctionsOfTimeMap& functions_of_time = {}) const = 0;
   /// @}
 
   /// @{
@@ -140,24 +122,11 @@ class CoordinateMapBase : public PUP::able {
   virtual InverseJacobian<double, Dim, SourceFrame, TargetFrame> inv_jacobian(
       tnsr::I<double, Dim, SourceFrame> source_point,
       double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const = 0;
+      const FunctionsOfTimeMap& functions_of_time = {}) const = 0;
   virtual InverseJacobian<DataVector, Dim, SourceFrame, TargetFrame>
-  inv_jacobian(
-      tnsr::I<DataVector, Dim, SourceFrame> source_point,
-      double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const = 0;
+  inv_jacobian(tnsr::I<DataVector, Dim, SourceFrame> source_point,
+               double time = std::numeric_limits<double>::signaling_NaN(),
+               const FunctionsOfTimeMap& functions_of_time = {}) const = 0;
   /// @}
 
   /// @{
@@ -165,23 +134,11 @@ class CoordinateMapBase : public PUP::able {
   virtual Jacobian<double, Dim, SourceFrame, TargetFrame> jacobian(
       tnsr::I<double, Dim, SourceFrame> source_point,
       double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const = 0;
+      const FunctionsOfTimeMap& functions_of_time = {}) const = 0;
   virtual Jacobian<DataVector, Dim, SourceFrame, TargetFrame> jacobian(
       tnsr::I<DataVector, Dim, SourceFrame> source_point,
       double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const = 0;
+      const FunctionsOfTimeMap& functions_of_time = {}) const = 0;
   /// @}
 
   /// @{
@@ -194,13 +151,7 @@ class CoordinateMapBase : public PUP::able {
   coords_frame_velocity_jacobians(
       tnsr::I<double, Dim, SourceFrame> source_point,
       double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const = 0;
+      const FunctionsOfTimeMap& functions_of_time = {}) const = 0;
   virtual std::tuple<tnsr::I<DataVector, Dim, TargetFrame>,
                      InverseJacobian<DataVector, Dim, SourceFrame, TargetFrame>,
                      Jacobian<DataVector, Dim, SourceFrame, TargetFrame>,
@@ -208,13 +159,7 @@ class CoordinateMapBase : public PUP::able {
   coords_frame_velocity_jacobians(
       tnsr::I<DataVector, Dim, SourceFrame> source_point,
       double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const = 0;
+      const FunctionsOfTimeMap& functions_of_time = {}) const = 0;
   /// @}
 
  private:
@@ -305,26 +250,14 @@ class CoordinateMap
   tnsr::I<double, dim, TargetFrame> operator()(
       tnsr::I<double, dim, SourceFrame> source_point,
       const double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const override {
+      const FunctionsOfTimeMap& functions_of_time = {}) const override {
     return call_impl(std::move(source_point), time, functions_of_time,
                      std::make_index_sequence<sizeof...(Maps)>{});
   }
   tnsr::I<DataVector, dim, TargetFrame> operator()(
       tnsr::I<DataVector, dim, SourceFrame> source_point,
       const double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const override {
+      const FunctionsOfTimeMap& functions_of_time = {}) const override {
     return call_impl(std::move(source_point), time, functions_of_time,
                      std::make_index_sequence<sizeof...(Maps)>{});
   }
@@ -335,13 +268,7 @@ class CoordinateMap
   std::optional<tnsr::I<double, dim, SourceFrame>> inverse(
       tnsr::I<double, dim, TargetFrame> target_point,
       const double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const override {
+      const FunctionsOfTimeMap& functions_of_time = {}) const override {
     return inverse_impl(std::move(target_point), time, functions_of_time,
                         std::make_index_sequence<sizeof...(Maps)>{});
   }
@@ -353,25 +280,13 @@ class CoordinateMap
   InverseJacobian<double, dim, SourceFrame, TargetFrame> inv_jacobian(
       tnsr::I<double, dim, SourceFrame> source_point,
       const double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const override {
+      const FunctionsOfTimeMap& functions_of_time = {}) const override {
     return inv_jacobian_impl(std::move(source_point), time, functions_of_time);
   }
   InverseJacobian<DataVector, dim, SourceFrame, TargetFrame> inv_jacobian(
       tnsr::I<DataVector, dim, SourceFrame> source_point,
       const double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const override {
+      const FunctionsOfTimeMap& functions_of_time = {}) const override {
     return inv_jacobian_impl(std::move(source_point), time, functions_of_time);
   }
   /// @}
@@ -381,25 +296,13 @@ class CoordinateMap
   Jacobian<double, dim, SourceFrame, TargetFrame> jacobian(
       tnsr::I<double, dim, SourceFrame> source_point,
       const double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const override {
+      const FunctionsOfTimeMap& functions_of_time = {}) const override {
     return jacobian_impl(std::move(source_point), time, functions_of_time);
   }
   Jacobian<DataVector, dim, SourceFrame, TargetFrame> jacobian(
       tnsr::I<DataVector, dim, SourceFrame> source_point,
       const double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const override {
+      const FunctionsOfTimeMap& functions_of_time = {}) const override {
     return jacobian_impl(std::move(source_point), time, functions_of_time);
   }
   /// @}
@@ -416,13 +319,7 @@ class CoordinateMap
   coords_frame_velocity_jacobians(
       tnsr::I<double, dim, SourceFrame> source_point,
       const double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const override {
+      const FunctionsOfTimeMap& functions_of_time = {}) const override {
     return coords_frame_velocity_jacobians_impl(std::move(source_point), time,
                                                 functions_of_time);
   }
@@ -433,13 +330,7 @@ class CoordinateMap
   coords_frame_velocity_jacobians(
       tnsr::I<DataVector, dim, SourceFrame> source_point,
       const double time = std::numeric_limits<double>::signaling_NaN(),
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time = std::unordered_map<
-              std::string,
-              std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>{})
-      const override {
+      const FunctionsOfTimeMap& functions_of_time = {}) const override {
     return coords_frame_velocity_jacobians_impl(std::move(source_point), time,
                                                 functions_of_time);
   }
@@ -513,44 +404,29 @@ class CoordinateMap
   }
 
   void check_functions_of_time(
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time) const;
+      const FunctionsOfTimeMap& functions_of_time) const;
 
   template <typename T, size_t... Is>
   tnsr::I<T, dim, TargetFrame> call_impl(
       tnsr::I<T, dim, SourceFrame>&& source_point, double time,
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time,
+      const FunctionsOfTimeMap& functions_of_time,
       std::index_sequence<Is...> /*meta*/) const;
 
   template <typename T, size_t... Is>
   std::optional<tnsr::I<T, dim, SourceFrame>> inverse_impl(
       tnsr::I<T, dim, TargetFrame>&& target_point, double time,
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time,
+      const FunctionsOfTimeMap& functions_of_time,
       std::index_sequence<Is...> /*meta*/) const;
 
   template <typename T>
   InverseJacobian<T, dim, SourceFrame, TargetFrame> inv_jacobian_impl(
       tnsr::I<T, dim, SourceFrame>&& source_point, double time,
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time) const;
+      const FunctionsOfTimeMap& functions_of_time) const;
 
   template <typename T>
   Jacobian<T, dim, SourceFrame, TargetFrame> jacobian_impl(
       tnsr::I<T, dim, SourceFrame>&& source_point, double time,
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time) const;
+      const FunctionsOfTimeMap& functions_of_time) const;
 
   template <typename T>
   std::tuple<tnsr::I<T, dim, TargetFrame>,
@@ -559,10 +435,7 @@ class CoordinateMap
              tnsr::I<T, dim, TargetFrame>>
   coords_frame_velocity_jacobians_impl(
       tnsr::I<T, dim, SourceFrame> source_point, double time,
-      const std::unordered_map<
-          std::string,
-          std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>&
-          functions_of_time) const;
+      const FunctionsOfTimeMap& functions_of_time) const;
 
   std::tuple<Maps...> maps_;
   std::unordered_set<std::string> function_of_time_names_;
