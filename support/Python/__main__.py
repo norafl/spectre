@@ -51,6 +51,10 @@ class Cli(click.MultiCommand):
             from spectre.Pipelines.Bbh import bbh_pipeline
 
             return bbh_pipeline
+        if name == "bns":
+            from spectre.Pipelines.Bns import bns_pipeline
+
+            return bns_pipeline
         if name == "clean-output":
             from spectre.tools.CleanOutput import clean_output_command
 
