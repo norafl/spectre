@@ -182,6 +182,7 @@ Amr:
     Limits:
       RefinementLevel: Auto
       NumGridPoints: Auto
+      ErrorBeyondLimits: False
   Verbosity: Quiet
 
 PhaseChangeAndTriggers:

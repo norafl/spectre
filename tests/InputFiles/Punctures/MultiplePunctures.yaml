@@ -83,6 +83,7 @@ Amr:
     Limits:
       NumGridPoints: Auto
       RefinementLevel: Auto
+      ErrorBeyondLimits: False
   Iterations: 2
 
 PhaseChangeAndTriggers:
