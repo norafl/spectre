@@ -61,13 +61,8 @@ struct FunctionsOfTime : domain::Tags::FunctionsOfTime, db::SimpleTag {
 }  // namespace LocalTags
 
 template <size_t VolumeDim>
-struct System {
-  static constexpr size_t volume_dim = VolumeDim;
-};
-
-template <size_t VolumeDim>
 struct Metavariables {
-  using system = System<VolumeDim>;
+  static constexpr size_t volume_dim = VolumeDim;
   using component_list = tmpl::list<
       TestHelpers::dg::Events::ObserveFields::ElementComponent<Metavariables>,
       TestHelpers::dg::Events::ObserveFields::MockObserverComponent<
