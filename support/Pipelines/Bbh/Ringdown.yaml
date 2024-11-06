@@ -82,6 +82,7 @@ DomainCreator:
         DecayTimescaleExpansionOuterBoundary: 1.0
       TranslationMap:
         InitialValues: [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
+      TransitionRotScaleTrans: True
     OuterBoundaryCondition:
       ConstraintPreservingBjorhus:
         Type: ConstraintPreservingPhysical

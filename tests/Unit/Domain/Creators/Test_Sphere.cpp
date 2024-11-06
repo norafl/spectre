@@ -155,6 +155,7 @@ std::string option_string(
                               "    TranslationMap:\n"
                               "      InitialValues: [[0.0, 0.0, 0.0],"
                               " [0.001, -0.003, 0.005], [0.0, 0.0, 0.0]]\n"
+                              "    TransitionRotScaleTrans: False\n"
                             : "  TimeDependentMaps:\n"
                               "    UniformTranslation:\n"
                               "      InitialTime: 1.0\n"
@@ -327,7 +328,7 @@ void test_sphere_construction(
             element_map(logical_block_corner, current_time, functions_of_time);
         const double delta_t = current_time - 1.0;
         for (size_t i = 0; i < 3; ++i) {
-          inertial_block_corner.get(i) -= velocity[i] * delta_t;
+          inertial_block_corner.get(i) -= gsl::at(velocity, i) * delta_t;
         }
         const double corner_distance_from_origin =
             get(magnitude(inertial_block_corner));
@@ -501,22 +502,6 @@ void test_parse_errors() {
       Catch::Matchers::ContainsSubstring(
           "None boundary condition is not supported. If you would like "
           "an outflow-type boundary condition, you must use that."));
-  using TDMO = domain::creators::sphere::TimeDependentMapOptions;
-  CHECK_THROWS_WITH(
-      creators::Sphere(inner_radius, outer_radius, inner_cube, refinement,
-                       initial_extents, use_equiangular_map,
-                       equatorial_compression, radial_partitioning,
-                       radial_distribution, which_wedges,
-                       TDMO{1.0, TDMO::ShapeMapOptions{5, std::nullopt},
-                            std::nullopt, std::nullopt,
-                            TDMO::TranslationMapOptions{
-                                {std::array<double, 3>{0.0, 0.0, 0.0},
-                                 std::array<double, 3>{0.001, -0.003, 0.005},
-                                 std::array<double, 3>{0.0, 0.0, 0.0}}}},
-                       nullptr),
-      Catch::Matchers::ContainsSubstring(
-          "Currently cannot use hard-coded time dependent maps with an inner "
-          "cube. Use a TimeDependence instead."));
 }
 
 template <typename Generator>
@@ -577,20 +562,18 @@ void test_sphere(const gsl::not_null<Generator*> gen) {
     CAPTURE(time_dependent);
     CAPTURE(with_boundary_conditions);
     // If we aren't time dependent, just set the hard coded option to false to
-    // avoid ambiguity. If we are time dependent but we're filling the interior,
-    // then we can't use hard coded options
-    if ((not time_dependent) or fill_interior) {
+    // avoid ambiguity
+    if (not time_dependent) {
       use_hard_coded_time_dep_options = false;
     }
     CAPTURE(use_hard_coded_time_dep_options);
 
     // If we are using hard coded maps, we need at least two shells (or one
     // radial partition) for the translation map.
-    const auto array_index =
-        (use_hard_coded_time_dep_options and
-                 gsl::at(radial_partitioning, index).empty()
-             ? index + 1
-             : index);
+    auto array_index = (use_hard_coded_time_dep_options and
+                                gsl::at(radial_partitioning, index).empty()
+                            ? index + 1
+                            : index);
     CAPTURE(gsl::at(radial_partitioning, array_index));
     CAPTURE(gsl::at(radial_distribution, array_index));
 
@@ -620,7 +603,8 @@ void test_sphere(const gsl::not_null<Generator*> gen) {
             std::nullopt, std::nullopt,
             creators::sphere::TimeDependentMapOptions::TranslationMapOptions{
                 {std::array<double, 3>{0.0, 0.0, 0.0}, translation_velocity,
-                 std::array<double, 3>{0.0, 0.0, 0.0}}});
+                 std::array<double, 3>{0.0, 0.0, 0.0}}},
+            false);
       } else {
         time_dependent_options = std::make_unique<
             domain::creators::time_dependence::UniformTranslation<3, 0>>(
@@ -661,16 +645,19 @@ void test_sphere(const gsl::not_null<Generator*> gen) {
 void test_shape_distortion_general(
     const double time,
     domain::creators::Sphere::TimeDepOptionType time_dependent_options,
-    const double inner_radius, const tnsr::I<DataVector, 3>& x) {
-  domain::creators::Sphere domain_creator{
-      inner_radius,
+    const double deformed_radius, const bool fill_interior,
+    const tnsr::I<DataVector, 3>& x) {
+  using Sphere = domain::creators::Sphere;
+  const Sphere domain_creator{
+      fill_interior ? 0.5 * deformed_radius : deformed_radius,
       10.,
-      domain::creators::Sphere::Excision{},
+      fill_interior ? Interior{Sphere::InnerCube{0.0}}
+                    : Interior{Sphere::Excision{}},
       0_st,
       6_st,
       true,
-      {},
-      {4.},
+      std::nullopt,
+      {fill_interior ? deformed_radius : 4.},
       domain::CoordinateMaps::Distribution::Linear,
       ShellWedges::All,
       std::move(time_dependent_options)};
@@ -683,7 +670,7 @@ void test_shape_distortion_general(
   for (size_t i = 0; i < get<0>(x).size(); ++i) {
     CAPTURE(x_logical[i]);
     REQUIRE(x_logical[i].has_value());
-    CHECK(get<2>(x_logical[i]->data) == approx(-1.));
+    CHECK(abs(get<2>(x_logical[i]->data)) == approx(1.));
   }
 }
 
@@ -722,19 +709,23 @@ void test_shape_distortion() {
         inner_radius, 4.);
 
     test_shape_distortion_general(time, std::move(time_dependent_options),
-                                  inner_radius, x);
+                                  inner_radius, false, x);
 
     // KerrSchild-BoyerLindquist. Use same x as above
-    time_dependent_options = domain::creators::sphere::TimeDependentMapOptions{
-        time,
-        {{l_max, domain::creators::time_dependent_options::
-                     KerrSchildFromBoyerLindquist{mass, spin}}},
-        std::nullopt,
-        std::nullopt,
-        std::nullopt};
-
-    test_shape_distortion_general(time, std::move(time_dependent_options),
-                                  inner_radius, x);
+    for (const bool fill_interior : {true, false}) {
+      CAPTURE(fill_interior);
+      time_dependent_options =
+          domain::creators::sphere::TimeDependentMapOptions{
+              time,
+              {{l_max, domain::creators::time_dependent_options::
+                           KerrSchildFromBoyerLindquist{mass, spin}}},
+              std::nullopt,
+              std::nullopt,
+              std::nullopt,
+              not fill_interior};
+      test_shape_distortion_general(time, std::move(time_dependent_options),
+                                    inner_radius, fill_interior, x);
+    }
   }
 
   {
@@ -771,10 +762,11 @@ void test_shape_distortion() {
           std::array{-4.6442771561420703730e-01, 0.0, 0.0}}},
         std::nullopt,
         std::nullopt,
-        std::nullopt};
+        std::nullopt,
+        true};
 
     test_shape_distortion_general(time, std::move(time_dependent_options),
-                                  inner_radius, x);
+                                  inner_radius, false, x);
 
     if (file_system::check_if_file_exists(h5_filename)) {
       file_system::rm(h5_filename, true);

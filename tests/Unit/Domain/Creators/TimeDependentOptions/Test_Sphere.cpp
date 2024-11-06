@@ -47,7 +47,8 @@ std::string create_option_string(const std::optional<bool> use_non_zero_shape) {
          "ExpansionMap: None\n"
          "TranslationMap:\n"
          "  InitialValues: [[0.1, -3.2, 1.1], [-0.3, 0.5, -0.7],"
-         " [0.1, -0.4, 0.02]]\n"s;
+         " [0.1, -0.4, 0.02]]\n"
+         "TransitionRotScaleTrans: True"s;
 }
 // nullopt implies no shape map at all
 void test(const std::optional<bool> use_non_zero_shape) {
@@ -107,12 +108,78 @@ void test(const std::optional<bool> use_non_zero_shape) {
 
   const std::array<double, 3> center{-5.0, -0.01, -0.02};
   const double inner_radius = 0.5;
-  const double outer_radius = 2.1;
-  const double transition_inner_radius = 3.1;
-  const double transition_outer_radius = 3.9;
+  const std::vector<double> radial_partitions{2.1, 3.1};
+  const double outer_radius = 3.9;
+
+  // All of these maps are tested individually. Rather than going through
+  // the effort of coming up with a source coordinate and calculating
+  // analytically what we would get after it's mapped, we just check that
+  // whether it's supposed to be a nullptr and if it's not, if it's the
+  // identity and that the jacobians are time dependent.
+  const auto check_map = [](const auto& map, const bool is_null,
+                            const bool is_identity) {
+    if (is_null) {
+      CHECK(map == nullptr);
+    } else {
+      REQUIRE(map != nullptr);
+      CHECK(map->is_identity() == is_identity);
+      CHECK(map->inv_jacobian_is_time_dependent() == not is_identity);
+      CHECK(map->jacobian_is_time_dependent() == not is_identity);
+    }
+  };
+
+  {
+    INFO("Excised");
+    time_dep_options.build_maps(center, /* filled */ false, inner_radius,
+                                radial_partitions, outer_radius);
+    // Inner shell with shape
+    check_map(time_dep_options.grid_to_distorted_map(0, false),
+              not use_non_zero_shape.has_value(), false);
+    check_map(time_dep_options.distorted_to_inertial_map(0, false),
+              not use_non_zero_shape.has_value(), false);
+    check_map(time_dep_options.grid_to_inertial_map(0, false, false), false,
+              false);
+    // Shell without shape
+    check_map(time_dep_options.grid_to_distorted_map(6, false), true, false);
+    check_map(time_dep_options.distorted_to_inertial_map(6, false), true,
+              false);
+    check_map(time_dep_options.grid_to_inertial_map(6, false, false), false,
+              false);
+  }
+  {
+    INFO("Filled");
+    time_dep_options.build_maps(center, /* filled */ true, inner_radius,
+                                radial_partitions, outer_radius);
+    // Inner shell: cube to sphere
+    check_map(time_dep_options.grid_to_distorted_map(0, false),
+              not use_non_zero_shape.has_value(), false);
+    check_map(time_dep_options.distorted_to_inertial_map(0, false),
+              not use_non_zero_shape.has_value(), false);
+    check_map(time_dep_options.grid_to_inertial_map(0, false, false), false,
+              false);
+    // Shape rolloff region
+    check_map(time_dep_options.grid_to_distorted_map(6, false),
+              not use_non_zero_shape.has_value(), false);
+    check_map(time_dep_options.distorted_to_inertial_map(6, false),
+              not use_non_zero_shape.has_value(), false);
+    check_map(time_dep_options.grid_to_inertial_map(0, false, false), false,
+              false);
+    // Shell without shape
+    check_map(time_dep_options.grid_to_distorted_map(12, false), true, false);
+    check_map(time_dep_options.distorted_to_inertial_map(12, false), true,
+              false);
+    check_map(time_dep_options.grid_to_inertial_map(12, false, false), false,
+              false);
+    // Inner cube
+    check_map(time_dep_options.grid_to_distorted_map(12, true), true, false);
+    check_map(time_dep_options.distorted_to_inertial_map(12, true), true,
+              false);
+    check_map(time_dep_options.grid_to_inertial_map(12, false, true), false,
+              false);
+  }
 
   const auto functions_of_time =
-      time_dep_options.create_functions_of_time(inner_radius, expiration_times);
+      time_dep_options.create_functions_of_time(expiration_times);
 
   if (use_non_zero_shape.has_value()) {
     CHECK(
@@ -129,61 +196,6 @@ void test(const std::optional<bool> use_non_zero_shape) {
     CHECK(dynamic_cast<PP2&>(
               *functions_of_time.at(TimeDependentMapOptions::translation_name)
                    .get()) == translation_non_zero);
-  }
-
-  for (const bool include_distorted : make_array(true, false)) {
-    for (const bool use_rigid : make_array(true, false)) {
-      time_dep_options.build_maps(
-          center, std::pair<double, double>{inner_radius, outer_radius},
-          std::pair<double, double>{transition_inner_radius,
-                                    transition_outer_radius});
-
-      if ((not use_non_zero_shape.has_value()) and include_distorted) {
-        CHECK_THROWS_WITH(
-            time_dep_options.grid_to_distorted_map(include_distorted),
-            Catch::Matchers::ContainsSubstring(
-                "Requesting grid to distorted map with distorted frame but "
-                "shape map options were not specified."));
-        CHECK_THROWS_WITH(
-            time_dep_options.grid_to_inertial_map(include_distorted, use_rigid),
-            Catch::Matchers::ContainsSubstring(
-                "Requesting grid to inertial map with distorted frame but "
-                "shape map options were not specified."));
-        continue;
-      }
-
-      const auto grid_to_distorted_map =
-          time_dep_options.grid_to_distorted_map(include_distorted);
-      const auto grid_to_inertial_map =
-          time_dep_options.grid_to_inertial_map(include_distorted, use_rigid);
-      const auto distorted_to_inertial_map =
-          time_dep_options.distorted_to_inertial_map(include_distorted);
-
-      // All of these maps are tested individually. Rather than going through
-      // the effort of coming up with a source coordinate and calculating
-      // analytically what we would get after it's mapped, we just check that
-      // whether it's supposed to be a nullptr and if it's not, if it's the
-      // identity and that the jacobians are time dependent.
-      const auto check_map = [](const auto& map, const bool is_null,
-                                const bool is_identity) {
-        if (is_null) {
-          CHECK(map == nullptr);
-        } else {
-          CHECK(map->is_identity() == is_identity);
-          CHECK(map->inv_jacobian_is_time_dependent() == not is_identity);
-          CHECK(map->jacobian_is_time_dependent() == not is_identity);
-        }
-      };
-
-      // There is no null pointer in the grid to inertial map
-      check_map(grid_to_inertial_map, false, false);
-
-      check_map(grid_to_distorted_map, not include_distorted, false);
-
-      // If no shape distortion, there is only the rotation, expansion and
-      // translation maps
-      check_map(distorted_to_inertial_map, not include_distorted, false);
-    }
   }
 }
 }  // namespace
