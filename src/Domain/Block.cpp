@@ -153,7 +153,8 @@ bool operator==(const Block<VolumeDim>& lhs, const Block<VolumeDim>& rhs) {
       (lhs.id() == rhs.id() and lhs.neighbors() == rhs.neighbors() and
        lhs.external_boundaries() == rhs.external_boundaries() and
        lhs.name() == rhs.name() and
-       lhs.is_time_dependent() == rhs.is_time_dependent());
+       lhs.is_time_dependent() == rhs.is_time_dependent() and
+       lhs.has_distorted_frame() == rhs.has_distorted_frame());
 
   if (lhs.is_time_dependent() and not lhs.has_distorted_frame()) {
     blocks_are_equal =
