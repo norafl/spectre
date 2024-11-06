@@ -111,7 +111,7 @@ EventsAndDenseTriggers:
               NormType: L2Norm
               Components: Sum
 
-EventsAndTriggers:
+EventsAndTriggersAtSlabs:
   - Trigger:
       Slabs:
         Specified:

@@ -231,7 +231,7 @@ RadiallyCompressedCoordinates:
   OuterRadius: *outer_radius
   Compression: *outer_shell_distribution
 
-EventsAndTriggers:
+EventsAndTriggersAtIterations:
   - Trigger: HasConverged
     Events:
       - ObserveFields:

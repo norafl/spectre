@@ -91,7 +91,7 @@ LinearSolver:
         WriteMatrixToFile: None
     ObservePerCoreReductions: False
 
-EventsAndTriggers:
+EventsAndTriggersAtIterations:
   - Trigger: HasConverged
     Events:
       - ObserveNorms:

@@ -155,7 +155,7 @@ Evolution:
   MinimumTimeStep: 1e-7
   # This is the smallest interval we'd need to observe time step/constraints. If
   # you need it smaller you can edit it, but make sure to change the slab
-  # intervals in the EventsAndTriggers
+  # intervals in the EventsAndTriggersAtSlabs
   InitialSlabSize: 0.1
   StepChoosers:
     - LimitIncrease:
@@ -261,7 +261,7 @@ PhaseChangeAndTriggers:
       - CheckpointAndExitAfterWallclock:
           WallclockHours: 23.5
 
-EventsAndTriggers:
+EventsAndTriggersAtSlabs:
   # Observe time step and cheap constraints every slab
   - Trigger:
       Slabs:
@@ -371,6 +371,8 @@ EventsAndTriggers:
         Value: 2.138
     Events:
       - Completion
+
+EventsAndTriggersAtSteps:
 
 EventsAndDenseTriggers:
   # BondiSachs output needs to be often enough for CCE to run properly. An

@@ -197,7 +197,7 @@ Filtering:
     Enable: true
     BlocksToFilter: All
 
-EventsAndTriggers:
+EventsAndTriggersAtSlabs:
   # Set time step at t=0
   - Trigger:
       Slabs:

@@ -167,7 +167,7 @@ Filtering:
     BlocksToFilter: All
 
 
-EventsAndTriggers:
+EventsAndTriggersAtSlabs:
   - Trigger:
       Slabs:
         EvenlySpaced:
@@ -234,6 +234,8 @@ EventsAndTriggers:
         Value: 0.02
     Events:
       - Completion
+
+EventsAndTriggersAtSteps:
 
 Observers:
   VolumeFileName: "GhBinaryBlackHoleVolumeData"

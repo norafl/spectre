@@ -117,7 +117,7 @@ LinearSolver:
             BoundaryConditions: Auto
     ObservePerCoreReductions: False
 
-EventsAndTriggers:
+EventsAndTriggersAtIterations:
   - Trigger: HasConverged
     Events:
       - ObserveNorms:

@@ -196,7 +196,7 @@ PhaseChangeAndTriggers:
       - CheckpointAndExitAfterWallclock:
           WallclockHours: 23.5
 
-EventsAndTriggers:
+EventsAndTriggersAtSlabs:
   - Trigger:
       Slabs:
         EvenlySpaced:
@@ -265,6 +265,8 @@ EventsAndTriggers:
         Value: {{ FinalTime }}
     Events:
       - Completion
+
+EventsAndTriggersAtSteps:
 
 EventsAndDenseTriggers:
   # BondiSachs output needs to be often enough for CCE to run properly. An
