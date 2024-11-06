@@ -412,7 +412,7 @@ struct TimeDependentMapOptions {
   std::optional<TranslationMapOptions> translation_map_options_{};
   std::optional<ShapeMapOptions<domain::ObjectLabel::A>> shape_options_A_{};
   std::optional<ShapeMapOptions<domain::ObjectLabel::B>> shape_options_B_{};
-  std::array<std::optional<double>, 2> inner_radii_{};
+  std::array<std::optional<double>, 2> deformed_radii_{};
 
   // Maps
   std::optional<Expansion> expansion_map_{};
