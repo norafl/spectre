@@ -66,6 +66,8 @@ class CriterionOne : public amr::Criterion {
   using PUP::able::register_constructor;
   WRAPPED_PUPable_decl_template(CriterionOne);  // NOLINT
 
+  std::string observation_name() override { return "CriterionOne"; }
+
   using compute_tags_for_observartion_box = tmpl::list<>;
   using argument_tags = tmpl::list<FieldOne>;
 
@@ -107,6 +109,8 @@ class CriterionTwo : public amr::Criterion {
   explicit CriterionTwo(CkMigrateMessage* /*msg*/) {}
   using PUP::able::register_constructor;
   WRAPPED_PUPable_decl_template(CriterionTwo);  // NOLINT
+
+  std::string observation_name() override { return "CriterionTwo"; }
 
   using compute_tags_for_observartion_box = tmpl::list<ConstraintCompute>;
   using argument_tags = tmpl::list<Constraint>;

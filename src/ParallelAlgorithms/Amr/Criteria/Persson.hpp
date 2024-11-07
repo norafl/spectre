@@ -141,6 +141,8 @@ class Persson : public Criterion {
   WRAPPED_PUPable_decl_template(Persson);  // NOLINT
   /// \endcond
 
+  std::string observation_name() override { return "Persson"; }
+
   using compute_tags_for_observation_box = tmpl::list<>;
 
   using argument_tags = tmpl::list<::Tags::DataBox>;

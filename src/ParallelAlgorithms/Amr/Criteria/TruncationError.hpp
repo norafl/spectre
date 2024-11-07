@@ -110,6 +110,8 @@ class TruncationError : public Criterion {
   WRAPPED_PUPable_decl_template(TruncationError);  // NOLINT
   /// \endcond
 
+  std::string observation_name() override { return "TruncationError"; }
+
   using compute_tags_for_observation_box = tmpl::list<>;
 
   using argument_tags = tmpl::list<::Tags::DataBox>;

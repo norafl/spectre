@@ -35,6 +35,8 @@ class IncreaseResolution : public Criterion {
   WRAPPED_PUPable_decl_template(IncreaseResolution);  // NOLINT
   /// \endcond
 
+  std::string observation_name() override { return "IncreaseResolution"; }
+
   using compute_tags_for_observation_box = tmpl::list<>;
   using argument_tags = tmpl::list<>;
 

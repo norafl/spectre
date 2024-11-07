@@ -61,6 +61,8 @@ class Random : public Criterion {
   WRAPPED_PUPable_decl_template(Random);  // NOLINT
   /// \endcond
 
+  std::string observation_name() override { return "Random"; }
+
   using compute_tags_for_observation_box = tmpl::list<>;
 
   using argument_tags = tmpl::list<>;

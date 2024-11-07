@@ -54,6 +54,8 @@ class Criterion : public PUP::able {
 
   WRAPPED_PUPable_abstract(Criterion);  // NOLINT
 
+  virtual std::string observation_name() = 0;
+
   /// Evaluates the AMR criteria by selecting the appropriate derived class
   /// and forwarding its `argument_tags` from the ObservationBox (along with the
   /// GlobalCache and ArrayIndex) to the call operator of the derived class

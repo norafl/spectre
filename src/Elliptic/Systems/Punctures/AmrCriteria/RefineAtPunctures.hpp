@@ -43,6 +43,8 @@ class RefineAtPunctures : public amr::Criterion {
   WRAPPED_PUPable_decl_template(RefineAtPunctures);  // NOLINT
   /// \endcond
 
+  std::string observation_name() override { return "RefineAtPunctures"; }
+
   using argument_tags = tmpl::list<
       elliptic::Tags::Background<elliptic::analytic_data::Background>,
       domain::Tags::Domain<3>>;
