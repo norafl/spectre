@@ -14,6 +14,7 @@ import spectre.IO.H5 as spectre_h5
 from spectre.Informer import unit_test_build_path, unit_test_src_path
 from spectre.Pipelines.Bbh.EccentricityControl import eccentricity_control
 from spectre.support.Logging import configure_logging
+from spectre.testing.PostNewtonian import BinaryTrajectories
 
 
 class TestEccentricityControl(unittest.TestCase):
@@ -38,82 +39,27 @@ class TestEccentricityControl(unittest.TestCase):
         shutil.rmtree(self.test_dir)
 
     def create_h5_file(self):
-        logging.info(f"Creating HDF5 file: {self.h5_filename}")
-        # Define parameters for sample data
-        nsamples = 100
-        dt = 0.02
-        x0, y0, z0, z1 = 0.35, 0.35, 0, -9.0e-6
-        cosAmp, sinAmp, cosFreq, sinFreq = 7.43, 7.43, 0.0173, 0.0172
-
-        # Define functions to generate data in position vs time format
-        def SpiralA(t):
-            return np.array(
-                [
-                    x0 + cosAmp * np.cos(-cosFreq * t),
-                    y0 - sinAmp * np.sin(sinFreq * t),
-                    z0 + z1 * (1 - 0.1) * t,
-                ]
-            )
-
-        def SpiralB(t):
-            return np.array(
-                [
-                    -x0 + cosAmp * np.cos(np.pi + cosFreq * t),
-                    -y0 + sinAmp * np.sin(sinFreq * t),
-                    z0 + z1 * (1 + 0.1) * t,
-                ]
-            )
-
-        # Generate time table and sample data
-        tTable = np.arange(0, (nsamples + 1) * dt, dt)
-        AhA_data = np.array([[t, *SpiralA(t), *SpiralA(t)] for t in tTable])
-        AhB_data = np.array([[t, *SpiralB(t), *SpiralB(t)] for t in tTable])
-
-        # Create and populate the HDF5 files with data
+        binary_trajectories = BinaryTrajectories(initial_separation=16)
+        times = np.arange(0, 1500, 1.0)
+        positions = np.array(binary_trajectories.positions(times))
         with spectre_h5.H5File(self.h5_filename, "w") as h5_file:
-            dataset_AhA = h5_file.insert_dat(
-                "ApparentHorizons/ControlSystemAhA_Centers",
-                legend=[
-                    "Time",
-                    "GridCenter_x",
-                    "GridCenter_y",
-                    "GridCenter_z",
-                    "InertialCenter_x",
-                    "InertialCenter_y",
-                    "InertialCenter_z",
-                ],
-                version=0,
-            )
-            for data_point in AhA_data:
-                dataset_AhA.append(data_point)
-            logging.debug(
-                f"Appended {len(AhA_data)} data points to AhA dataset."
-            )
-            h5_file.close_current_object()
-
-            dataset_AhB = h5_file.insert_dat(
-                "ApparentHorizons/ControlSystemAhB_Centers",
-                legend=[
-                    "Time",
-                    "GridCenter_x",
-                    "GridCenter_y",
-                    "GridCenter_z",
-                    "InertialCenter_x",
-                    "InertialCenter_y",
-                    "InertialCenter_z",
-                ],
-                version=0,
-            )
-            for data_point in AhB_data:
-                dataset_AhB.append(data_point)
-            logging.debug(
-                f"Appended {len(AhB_data)} data points to AhB dataset."
-            )
-            h5_file.close_current_object()
-
-        logging.info(
-            f"Successfully created and populated HDF5 file: {self.h5_filename}"
-        )
+            for i, ab in enumerate("AB"):
+                dataset = h5_file.insert_dat(
+                    f"ApparentHorizons/ControlSystemAh{ab}_Centers.dat",
+                    legend=[
+                        "Time",
+                        "GridCenter_x",
+                        "GridCenter_y",
+                        "GridCenter_z",
+                        "InertialCenter_x",
+                        "InertialCenter_y",
+                        "InertialCenter_z",
+                    ],
+                    version=0,
+                )
+                for t, coords in zip(times, positions[i].T):
+                    dataset.append([t, *coords, *coords])
+                h5_file.close_current_object()
 
     def create_yaml_file(self):
         # Define YAML data and write it to the file
