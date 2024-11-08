@@ -9,11 +9,11 @@
 
 #include "Utilities/ConstantExpressions.hpp"
 
-BinaryTrajectories::BinaryTrajectories(double initial_separation,
-                                       const std::array<double, 3>& velocity,
-                                       bool newtonian)
+BinaryTrajectories::BinaryTrajectories(
+    double initial_separation,
+    const std::array<double, 3>& center_of_mass_velocity, bool newtonian)
     : initial_separation_fourth_power_{square(square(initial_separation))},
-      velocity_(velocity),
+      center_of_mass_velocity_(center_of_mass_velocity),
       newtonian_(newtonian) {}
 
 double BinaryTrajectories::separation(const double time) const {
@@ -56,11 +56,11 @@ BinaryTrajectories::position_impl(const double time,
   double yA = 0.5 * separation * sin(orbital_freq * time);
   double xB = -xA;
   double yB = -yA;
-  xB += velocity_[0] * time;
-  xA += velocity_[0] * time;
-  yB += velocity_[1] * time;
-  yA += velocity_[1] * time;
-  const double zB = velocity_[2] * time;
+  xB += center_of_mass_velocity_[0] * time;
+  xA += center_of_mass_velocity_[0] * time;
+  yB += center_of_mass_velocity_[1] * time;
+  yA += center_of_mass_velocity_[1] * time;
+  const double zB = center_of_mass_velocity_[2] * time;
   const double zA = zB;
   return {{xA, yA, zA}, {xB, yB, zB}};
 }

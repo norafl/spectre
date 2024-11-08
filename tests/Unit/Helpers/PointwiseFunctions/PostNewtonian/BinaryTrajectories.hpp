@@ -39,7 +39,7 @@
 class BinaryTrajectories {
  public:
   BinaryTrajectories(double initial_separation,
-                     const std::array<double, 3>& velocity =
+                     const std::array<double, 3>& center_of_mass_velocity =
                          std::array<double, 3>{{0.0, 0.0, 0.0}},
                      bool newtonian = false);
   BinaryTrajectories() = default;
@@ -79,6 +79,6 @@ class BinaryTrajectories {
       double time, double separation) const;
 
   double initial_separation_fourth_power_;
-  std::array<double, 3> velocity_;
+  std::array<double, 3> center_of_mass_velocity_;
   bool newtonian_;
 };
