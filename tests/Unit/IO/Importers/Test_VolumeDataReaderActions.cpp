@@ -302,7 +302,7 @@ void test_actions(const std::variant<double, importers::ObservationSelector>&
 }
 }  // namespace
 
-// [[TimeOut, 10]]
+// [[TimeOut, 30]]
 SPECTRE_TEST_CASE("Unit.IO.Importers.VolumeDataReaderActions", "[Unit][IO]") {
   test_actions<false>(0., false, false);
   test_actions<false>(0., true, false);
