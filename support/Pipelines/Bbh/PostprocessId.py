@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 def postprocess_id(
     id_input_file_path: Union[str, Path],
     id_run_dir: Optional[Union[str, Path]] = None,
-    horizon_l_max: int = 12,
+    horizon_l_max: int = 16,
     horizons_file: Optional[Union[str, Path]] = None,
     control: bool = True,
     control_residual_tolerance: float = DEFAULT_RESIDUAL_TOLERANCE,
@@ -207,7 +207,7 @@ def postprocess_id(
     "--horizon-l-max",
     type=click.IntRange(0, None),
     help="Maximum l-mode for the horizon search.",
-    default=12,
+    default=16,
     show_default=True,
 )
 @click.option(
