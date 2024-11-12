@@ -24,11 +24,21 @@ ConstantM1::ConstantM1(const std::array<double, 3>& mean_velocity,
       mean_velocity_(std::move(mean_velocity)),  // NOLINT
       comoving_energy_density_(comoving_energy_density) {}
 
+std::unique_ptr<evolution::initial_data::InitialData> ConstantM1::get_clone()
+    const {
+  return std::make_unique<ConstantM1>(*this);
+}
+
+ConstantM1::ConstantM1(CkMigrateMessage* msg) : InitialData(msg) {}
+
 void ConstantM1::pup(PUP::er& p) {
+  InitialData::pup(p);
   p | mean_velocity_;
   p | comoving_energy_density_;
   p | background_spacetime_;
 }
+
+PUP::able::PUP_ID ConstantM1::my_PUP_ID = 0;  // NOLINT
 
 // Variables templated on neutrino species.
 template <typename NeutrinoSpecies>

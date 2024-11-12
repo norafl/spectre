@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cstddef>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -21,15 +22,18 @@
 #include "PointwiseFunctions/AnalyticSolutions/RadiationTransport/M1Grey/ConstantM1.hpp"
 #include "PointwiseFunctions/GeneralRelativity/Tags.hpp"
 #include "PointwiseFunctions/Hydro/Tags.hpp"
+#include "PointwiseFunctions/InitialDataUtilities/Tags/InitialData.hpp"
 #include "Utilities/MakeWithValue.hpp"
+#include "Utilities/Serialization/RegisterDerivedClassesWithCharm.hpp"
 #include "Utilities/TMPL.hpp"
 #include "Utilities/TaggedTuple.hpp"
 
 namespace {
+using InitialData = evolution::initial_data::InitialData;
+using ConstantM1 = RadiationTransport::M1Grey::Solutions::ConstantM1;
 
 struct ConstantM1Proxy : RadiationTransport::M1Grey::Solutions::ConstantM1 {
-  using RadiationTransport::M1Grey::Solutions::ConstantM1::ConstantM1;
-
+  using ConstantM1::ConstantM1;
   using hydro_variables_tags =
       tmpl::list<hydro::Tags::SpatialVelocity<DataVector, 3>,
                  hydro::Tags::LorentzFactor<DataVector>>;
@@ -52,26 +56,39 @@ struct ConstantM1Proxy : RadiationTransport::M1Grey::Solutions::ConstantM1 {
 };
 
 void test_create_from_options() {
-  const auto flow = TestHelpers::test_creation<
-      RadiationTransport::M1Grey::Solutions::ConstantM1>(
-      "MeanVelocity: [0.0, 0.2, 0.1]\n"
-      "ComovingEnergyDensity: 1.3");
-  CHECK(flow == RadiationTransport::M1Grey::Solutions::ConstantM1(
-                    {{0.0, 0.2, 0.1}}, 1.3));
+  register_classes_with_charm<ConstantM1>();
+  const std::unique_ptr<evolution::initial_data::InitialData> option_solution =
+      TestHelpers::test_option_tag_factory_creation<
+          evolution::initial_data::OptionTags::InitialData, ConstantM1>(
+          "ConstantM1:\n"
+          "  MeanVelocity: [0.0, 0.2, 0.1]\n"
+          "  ComovingEnergyDensity: 1.3");
+  const auto deserialized_option_solution =
+      serialize_and_deserialize(option_solution);
+  const auto& created_solution =
+      dynamic_cast<const ConstantM1&>(*deserialized_option_solution);
+  CHECK(created_solution == ConstantM1({{0.0, 0.2, 0.1}}, 1.3));
 }
 
 void test_move() {
-  RadiationTransport::M1Grey::Solutions::ConstantM1 flow({{0.24, 0.11, 0.04}},
-                                                         1.3);
-  RadiationTransport::M1Grey::Solutions::ConstantM1 flow_copy(
-      {{0.24, 0.11, 0.04}}, 1.3);
+  ConstantM1 flow({{0.24, 0.11, 0.04}}, 1.3);
+  const ConstantM1 flow_copy({{0.24, 0.11, 0.04}}, 1.3);
   test_move_semantics(std::move(flow), flow_copy);  //  NOLINT
 }
 
 void test_serialize() {
-  RadiationTransport::M1Grey::Solutions::ConstantM1 flow({{0.24, 0.11, 0.04}},
-                                                         1.3);
+  const ConstantM1 flow({{0.24, 0.11, 0.04}}, 1.3);
   test_serialization(flow);
+}
+
+void test_derived() {
+  register_classes_with_charm<ConstantM1>();
+  const std::unique_ptr<InitialData> initial_data_ptr =
+      std::make_unique<ConstantM1>(std::array{0.24, 0.11, 0.04}, 1.3);
+  const std::unique_ptr<InitialData> deserialized_initial_data_ptr =
+      serialize_and_deserialize(initial_data_ptr)->get_clone();
+  CHECK(dynamic_cast<ConstantM1*>(deserialized_initial_data_ptr.get()) !=
+        nullptr);
 }
 
 void test_variables(const DataVector& used_for_size) {
@@ -131,6 +148,6 @@ SPECTRE_TEST_CASE(
   test_create_from_options();
   test_serialize();
   test_move();
-
+  test_derived();
   test_variables(DataVector(5));
 }

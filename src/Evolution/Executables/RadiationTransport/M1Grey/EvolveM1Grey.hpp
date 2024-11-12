@@ -70,9 +70,10 @@
 #include "PointwiseFunctions/AnalyticData/AnalyticData.hpp"
 #include "PointwiseFunctions/AnalyticData/Tags.hpp"
 #include "PointwiseFunctions/AnalyticSolutions/AnalyticSolution.hpp"
-#include "PointwiseFunctions/AnalyticSolutions/RadiationTransport/M1Grey/ConstantM1.hpp"
+#include "PointwiseFunctions/AnalyticSolutions/RadiationTransport/M1Grey/Factory.hpp"
 #include "PointwiseFunctions/AnalyticSolutions/Tags.hpp"
 #include "PointwiseFunctions/Hydro/Tags.hpp"
+#include "PointwiseFunctions/InitialDataUtilities/Tags/InitialData.hpp"
 #include "Time/Actions/AdvanceTime.hpp"
 #include "Time/Actions/CleanHistory.hpp"
 #include "Time/Actions/RecordTimeStepperData.hpp"
@@ -109,13 +110,8 @@ class CProxy_GlobalCache;
 struct EvolutionMetavars {
   static constexpr size_t volume_dim = 3;
 
-  // To switch which initial data is evolved you only need to change the
-  // line `using initial_data = ...;` and include the header file for the
-  // solution.
-  using initial_data = RadiationTransport::M1Grey::Solutions::ConstantM1;
-  static_assert(
-      is_analytic_data_v<initial_data> xor is_analytic_solution_v<initial_data>,
-      "initial_data must be either an analytic_data or an analytic_solution");
+  using initial_data_list =
+      RadiationTransport::M1Grey::Solutions::all_solutions;
 
   // Set list of neutrino species to be used by M1 code
   using neutrino_species = tmpl::list<neutrinos::ElectronNeutrinos<1>>;
@@ -128,17 +124,12 @@ struct EvolutionMetavars {
       TimeStepperBase::local_time_stepping;
   static constexpr bool use_dg_element_collection = false;
 
-  using initial_data_tag =
-      tmpl::conditional_t<is_analytic_solution_v<initial_data>,
-                          Tags::AnalyticSolution<initial_data>,
-                          Tags::AnalyticData<initial_data>>;
   using analytic_variables_tags = typename system::variables_tag::tags_list;
   using limiter = Tags::Limiter<
       Limiters::Minmod<3, typename system::variables_tag::tags_list>>;
 
-  using analytic_compute =
-      evolution::Tags::AnalyticSolutionsCompute<volume_dim,
-                                                analytic_variables_tags, false>;
+  using analytic_compute = evolution::Tags::AnalyticSolutionsCompute<
+      volume_dim, analytic_variables_tags, false, initial_data_list>;
   using error_compute = Tags::ErrorsCompute<analytic_variables_tags>;
   using error_tags = db::wrap_tags_in<Tags::Error, analytic_variables_tags>;
   using observe_fields = tmpl::push_back<
@@ -165,7 +156,7 @@ struct EvolutionMetavars {
                            volume_dim, observe_fields, non_tensor_compute_tags>,
                        Events::time_events<system>>>>,
         tmpl::pair<ImexTimeStepper, TimeSteppers::imex_time_steppers>,
-
+        tmpl::pair<evolution::initial_data::InitialData, initial_data_list>,
         tmpl::pair<PhaseChange, PhaseControl::factory_creatable_classes>,
         tmpl::pair<RadiationTransport::M1Grey::BoundaryConditions::
                        BoundaryCondition<neutrino_species>,
@@ -192,7 +183,7 @@ struct EvolutionMetavars {
   static_assert(not local_time_stepping);
   using step_actions = tmpl::flatten<tmpl::list<
       Actions::MutateApply<
-          evolution::dg::BackgroundGrVars<system, EvolutionMetavars, false>>,
+          evolution::dg::BackgroundGrVars<system, EvolutionMetavars, true>>,
       evolution::dg::Actions::ComputeTimeDerivative<
           volume_dim, system, AllStepChoosers, local_time_stepping,
           use_dg_element_collection>,
@@ -227,7 +218,7 @@ struct EvolutionMetavars {
           evolution::dg::Initialization::Domain<volume_dim>,
           Initialization::TimeStepperHistory<EvolutionMetavars>>,
       Initialization::Actions::AddSimpleTags<
-          evolution::dg::BackgroundGrVars<system, EvolutionMetavars, false>>,
+          evolution::dg::BackgroundGrVars<system, EvolutionMetavars, true>>,
       Initialization::Actions::ConservativeSystem<system>,
       evolution::Initialization::Actions::SetVariables<
           domain::Tags::Coordinates<volume_dim, Frame::ElementLogical>>,
@@ -275,7 +266,8 @@ struct EvolutionMetavars {
                  observers::ObserverWriter<EvolutionMetavars>,
                  dg_element_array>;
 
-  using const_global_cache_tags = tmpl::list<initial_data_tag>;
+  using const_global_cache_tags =
+      tmpl::list<evolution::initial_data::Tags::InitialData>;
 
   static constexpr Options::String help{
       "Evolve the M1Grey system (without coupling to hydro).\n\n"};
