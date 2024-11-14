@@ -4,8 +4,6 @@
 #include "Framework/TestingFramework.hpp"
 
 #include <array>
-#include <catch2/matchers/catch_matchers.hpp>
-#include <catch2/matchers/catch_matchers_string.hpp>
 #include <cmath>
 #include <limits>
 #include <memory>
@@ -181,6 +179,12 @@ void test_only_transition_no_offset() {
                         (std::array{-1.0 / distance_difference, 0.0, 0.0}));
   CHECK_ITERABLE_APPROX(wedge_reverse.gradient(point),
                         (std::array{1.0 / distance_difference, 0.0, 0.0}));
+#ifdef SPECTRE_DEBUG
+  CHECK_THROWS_WITH(
+      wedge.gradient(20.0 * point),
+      Catch::Matchers::ContainsSubstring(
+          "The Wedge transition map was called with bad coordinates."));
+#endif
 
   std::optional<double> orig_rad_over_rad{};
   std::optional<double> orig_rad_over_rad_reverse{};
@@ -207,12 +211,13 @@ void test_only_transition_no_offset() {
   CHECK(orig_rad_over_rad.has_value());
   CHECK(orig_rad_over_rad.value() ==
         approx(4.0 / magnitude(point * (1.0 + 0.25 * function_value * 0.5))));
+  set_orig_rad_over_rad(point * 15.0, 0.0);
+  CHECK(orig_rad_over_rad.has_value());
+  CHECK(orig_rad_over_rad.value() == 1.0);
   // Hit some internal checks
   set_orig_rad_over_rad(point * 0.0, 0.0);
   CHECK_FALSE(orig_rad_over_rad.has_value());
   CHECK_FALSE(orig_rad_over_rad_reverse.has_value());
-  set_orig_rad_over_rad(point * 15.0, 0.0);
-  CHECK_FALSE(orig_rad_over_rad.has_value());
   // Wedge is in x direction. Check other directions
   const auto check_other_directions =
       [&](const std::array<double, 3>& mapped_point) {
@@ -231,6 +236,10 @@ void test_only_transition_no_offset() {
   set_orig_rad_over_rad(std::array{0.0, 0.0, 0.2 * inner_radius}, 0.4);
   CHECK(orig_rad_over_rad.has_value());
   CHECK(orig_rad_over_rad.value() == approx(5.0));
+  // Inside inner boundary
+  set_orig_rad_over_rad(std::array{0.0, 0.0, 0.1 * inner_radius}, 0.4);
+  CHECK(orig_rad_over_rad.has_value());
+  CHECK(orig_rad_over_rad.value() == (1.0 + 0.4 / (0.1 * inner_radius)));
 }
 
 void test_only_transition_offset() {
@@ -379,8 +388,13 @@ void test_points_shape_map(
   // test_coordinate_map_argument_types creates its own DataVectors and we only
   // allow the inverse to be called with doubles
   if constexpr (std::is_same_v<T, double>) {
-    test_coordinate_map_argument_types(shape, points, check_time,
-                                       functions_of_time);
+    // If a point is beyond the inner or outer surfaces, then we can't call the
+    // Jacobian, and test_coordinate_map_argument_types() has a jacobian call in
+    // it.
+    if (check_jacobians) {
+      test_coordinate_map_argument_types(shape, points, check_time,
+                                         functions_of_time);
+    }
     test_inverse_map(shape, points, check_time, functions_of_time);
   }
 
@@ -396,6 +410,7 @@ template <typename Generator>
 void test_in_shape_map_no_offset(const gsl::not_null<Generator*> generator,
                                  const bool reverse) {
   INFO("Test using shape map without offset");
+  CAPTURE(reverse);
   std::uniform_real_distribution<double> coef_dist{-0.01, 0.01};
 
   const double initial_time = 1.0;
@@ -415,11 +430,11 @@ void test_in_shape_map_no_offset(const gsl::not_null<Generator*> generator,
           std::numeric_limits<double>::infinity());
 
   std::uniform_real_distribution<double> angle_dist{0.0, 2.0 * M_PI};
-  // This guarantees the radius of the point is within the wedge and that
-  // numerical jacobians will succeed
+  // This guarantees the radius of the point is within an acceptable distance of
+  // the inner/outer surface of the wedge even if we are reversed
   // NOLINTNEXTLINE(misc-const-correctness)
-  std::uniform_real_distribution<double> radial_dist{
-      inner_radius + 1.e-3, outer_radius / sqrt(3.0) - 1.e-3};
+  std::uniform_real_distribution<double> radial_dist{(0.8 * inner_radius),
+                                                     (outer_radius + 0.2)};
 
   for (const auto& [inner_sphericity, outer_sphericity] :
        cartesian_product(std::array{1.0, 0.0}, std::array{1.0, 0.0})) {
@@ -456,10 +471,13 @@ void test_in_shape_map_no_offset(const gsl::not_null<Generator*> generator,
       CAPTURE(centered_point);
       CAPTURE(axis_for_wedge);
 
+      const bool check_jacobians = radius >= (inner_radius + 1.e-3) and
+                                   radius <= (outer_radius / sqrt(3.0) - 1.e-3);
+
       test_points_shape_map(inner_sphericity, outer_sphericity, center, center,
                             static_cast<Wedge::Axis>(axis_for_wedge),
                             check_time, fot_name, functions_of_time,
-                            centered_point + center, reverse);
+                            centered_point + center, reverse, check_jacobians);
     }
   }
 }

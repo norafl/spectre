@@ -12,6 +12,7 @@
 #include "Utilities/ContainerHelpers.hpp"
 #include "Utilities/EqualWithinRoundoff.hpp"
 #include "Utilities/ErrorHandling/Error.hpp"
+#include "Utilities/MakeString.hpp"
 
 namespace domain::CoordinateMaps::ShapeMapTransitionFunctions {
 
@@ -55,10 +56,23 @@ std::optional<double> SphereTransition::original_radius_over_radius(
   }
   const double original_radius = (mag + radial_distortion * b_) / denom;
 
-  return (original_radius + eps_) >= r_min_ and
-                 (original_radius - eps_) <= r_max_
-             ? std::optional<double>{original_radius / mag}
-             : std::nullopt;
+  // If we are within r_min and r_max, doesn't matter if we are reverse, we just
+  // return the value we calculated. If we are reverse and the point is outside
+  // r_max or we aren't reversed and the point is inside r_min, then we return a
+  // simplified formula since the transition function is 1 in this region. If
+  // the above conditions aren't true, then we are in the region where the
+  // transition function is 0, so we return 1.0. Otherwise we return nullopt.
+  if ((original_radius + eps_) >= r_min_ and
+      (original_radius - eps_) <= r_max_) {
+    return std::optional<double>{original_radius / mag};
+  } else if ((a_ > 0.0 and mag > r_max_) or (a_ < 0.0 and mag < r_min_)) {
+    // a_ being positive is a sentinel for reverse (see constructor)
+    return {1.0 + radial_distortion / mag};
+  } else if ((a_ < 0.0 and mag > r_max_) or (a_ > 0.0 and mag < r_min_)) {
+    return {1.0};
+  } else {
+    return std::nullopt;
+  }
 }
 
 std::array<double, 3> SphereTransition::gradient(
@@ -73,15 +87,17 @@ std::array<DataVector, 3> SphereTransition::gradient(
 template <typename T>
 T SphereTransition::call_impl(const std::array<T, 3>& source_coords) const {
   const T mag = magnitude(source_coords);
-  check_magnitudes(mag);
-  return a_ * mag + b_;
+  check_magnitudes(mag, false);
+  // See https://github.com/sxs-collaboration/spectre/issues/6376 for why the
+  // T{} is necessary inside the clamp.
+  return blaze::clamp(T{a_ * mag + b_}, 0.0, 1.0);
 }
 
 template <typename T>
 std::array<T, 3> SphereTransition::gradient_impl(
     const std::array<T, 3>& source_coords) const {
   const T mag = magnitude(source_coords);
-  check_magnitudes(mag);
+  check_magnitudes(mag, true);
   return a_ * source_coords / mag;
 }
 
@@ -101,18 +117,29 @@ bool SphereTransition::operator!=(
   return not(*this == other);
 }
 
-// checks that the magnitudes are all between `r_min_` and `r_max_`
+// if we need the point to be between the r_min and r_max, check that,
+// otherwise just check that the radius is positive
 template <typename T>
-void SphereTransition::check_magnitudes([[maybe_unused]] const T& mag) const {
+void SphereTransition::check_magnitudes(
+    [[maybe_unused]] const T& mag,
+    [[maybe_unused]] const bool check_bounds) const {
 #ifdef SPECTRE_DEBUG
   for (size_t i = 0; i < get_size(mag); ++i) {
-    if (get_element(mag, i) + eps_ < r_min_ or
-        get_element(mag, i) - eps_ > r_max_) {
+    const bool point_is_bad = check_bounds
+                                  ? (get_element(mag, i) + eps_ < r_min_ or
+                                     get_element(mag, i) - eps_ > r_max_)
+                                  : get_element(mag, i) <= 0.0;
+    if (point_is_bad) {
       ERROR(
-          "The sphere transition map was called with coordinates outside the "
-          "set minimum and maximum radius. The minimum radius is "
-          << r_min_ << ", the maximum radius is " << r_max_
-          << ". The requested point has magnitude: " << get_element(mag, i));
+          "The sphere transition map was called with bad coordinates. The "
+          "requested point has magnitude "
+          << get_element(mag, i)
+          << (check_bounds
+                  ? (MakeString{} << " which is outside the set minimum and "
+                                     "maxiumum radius. The minimum radius is "
+                                  << r_min_ << ", the maximum radius is "
+                                  << r_max_ << ".")
+                  : (MakeString{} << " <= 0.0")));
     }
   }
 #endif  // SPECTRE_DEBUG
