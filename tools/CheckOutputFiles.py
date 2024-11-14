@@ -115,22 +115,55 @@ class H5Check:
                         ),
                     )
                     if test_data.dtype == float or test_data.dtype == complex:
-                        npt.assert_allclose(
-                            test_data[:, column_mask],
-                            expected_data[:, column_mask],
-                            rtol=self.relative_tolerance,
-                            atol=self.absolute_tolerance,
-                        )
+                        # numpy testing doesn't print the full array nor does it
+                        # print to full precision during a test, so we capture
+                        # the error and print the arrays to full precision
+                        try:
+                            npt.assert_allclose(
+                                test_data[:, column_mask],
+                                expected_data[:, column_mask],
+                                rtol=self.relative_tolerance,
+                                atol=self.absolute_tolerance,
+                            )
+                        except AssertionError as e:
+                            np.set_printoptions(precision=16)
+                            print(
+                                "DESIRED:"
+                                f" {np.array(expected_data[:, column_mask])}"
+                            )
+                            print(
+                                f"ACTUAL: {np.array(test_data[:, column_mask])}"
+                            )
+                            raise AssertionError(
+                                "Test data is not equal to the expected data"
+                            ) from e
                     else:
                         self.unit_test.assertEqual(test_data, expected_data)
                 else:
                     if test_data.dtype == float or test_data.dtype == complex:
-                        npt.assert_allclose(
-                            test_data[:, column_mask],
-                            self.expected_data or 0.0,
-                            rtol=self.relative_tolerance,
-                            atol=self.absolute_tolerance,
-                        )
+                        # numpy testing doesn't print the full array nor does it
+                        # print to full precision during a test, so we capture
+                        # the error and print the arrays to full precision
+                        try:
+                            npt.assert_allclose(
+                                test_data[:, column_mask],
+                                self.expected_data or 0.0,
+                                rtol=self.relative_tolerance,
+                                atol=self.absolute_tolerance,
+                            )
+                        except AssertionError as e:
+                            np.set_printoptions(precision=16)
+                            print(f"DESIRED: {np.array(self.expected_data)}")
+                            if self.expected_data:
+                                print(
+                                    "ACTUAL:"
+                                    f" {np.array(test_data[:, column_mask])}"
+                                )
+                            else:
+                                print("ACTUAL: 0.0")
+                            raise AssertionError(
+                                "Test data is not equal to the expected data"
+                            ) from e
                     else:
                         self.assertTrue(
                             False,
