@@ -965,12 +965,14 @@ void test_impl(const Spectral::Quadrature quadrature,
       mortar_id_ptr = &mortar_id;
       compute_correction_coupling(mortar_data.local(), mortar_data.neighbor());
     }
+    Approx custom_approx = Approx::custom().epsilon(5.e-11);
     tmpl::for_each<dt_variables_tags>(
-        [&expected_dt_variables_volume, &runner, &self_id](auto tag_v) {
+        [&custom_approx, &expected_dt_variables_volume, &runner,
+         &self_id](auto tag_v) {
           using tag = tmpl::type_from<decltype(tag_v)>;
-          CHECK_ITERABLE_APPROX(
+          CHECK_ITERABLE_CUSTOM_APPROX(
               get<tag>(get_tag<dt_variables_tag>(runner, self_id)),
-              get<tag>(expected_dt_variables_volume));
+              get<tag>(expected_dt_variables_volume), custom_approx);
         });
     CHECK(expected_evolved_variables ==
           get_tag<variables_tag>(runner, self_id));

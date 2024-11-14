@@ -23,6 +23,7 @@
 #include "Domain/FunctionsOfTime/FunctionOfTime.hpp"
 #include "Domain/FunctionsOfTime/PiecewisePolynomial.hpp"
 #include "Domain/FunctionsOfTime/Tags.hpp"
+#include "Domain/MinimumGridSpacing.hpp"
 #include "Domain/Structure/ElementId.hpp"
 #include "Domain/Structure/SegmentId.hpp"
 #include "Domain/Tags.hpp"
@@ -60,13 +61,8 @@ struct FunctionsOfTime : domain::Tags::FunctionsOfTime, db::SimpleTag {
 }  // namespace LocalTags
 
 template <size_t VolumeDim>
-struct System {
-  static constexpr size_t volume_dim = VolumeDim;
-};
-
-template <size_t VolumeDim>
 struct Metavariables {
-  using system = System<VolumeDim>;
+  static constexpr size_t volume_dim = VolumeDim;
   using component_list = tmpl::list<
       TestHelpers::dg::Events::ObserveFields::ElementComponent<Metavariables>,
       TestHelpers::dg::Events::ObserveFields::MockObserverComponent<

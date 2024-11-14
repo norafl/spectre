@@ -66,6 +66,7 @@
 #include "ParallelAlgorithms/Amr/Criteria/Random.hpp"
 #include "ParallelAlgorithms/Amr/Criteria/Tags/Criteria.hpp"
 #include "ParallelAlgorithms/Amr/Criteria/TruncationError.hpp"
+#include "ParallelAlgorithms/Amr/Events/ObserveAmrCriteria.hpp"
 #include "ParallelAlgorithms/Amr/Events/RefineMesh.hpp"
 #include "ParallelAlgorithms/Amr/Projectors/CopyFromCreatorOrLeaveAsIs.hpp"
 #include "ParallelAlgorithms/Amr/Projectors/DefaultInitialize.hpp"
@@ -186,6 +187,7 @@ struct EvolutionMetavars {
         tmpl::pair<Event,
                    tmpl::flatten<tmpl::list<
                        Events::Completion, amr::Events::RefineMesh,
+                       amr::Events::ObserveAmrCriteria<EvolutionMetavars>,
                        dg::Events::field_observations<
                            volume_dim, observe_fields, non_tensor_compute_tags>,
                        Events::time_events<system>>>>,

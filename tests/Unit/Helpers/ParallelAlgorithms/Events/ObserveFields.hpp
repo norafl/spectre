@@ -84,7 +84,7 @@ struct ElementComponent {
 
   using metavariables = Metavariables;
   using chare_type = ActionTesting::MockArrayChare;
-  using array_index = ElementId<Metavariables::system::volume_dim>;
+  using array_index = ElementId<Metavariables::volume_dim>;
   using phase_dependent_action_list = tmpl::list<
       Parallel::PhaseActions<Parallel::Phase::Initialization, tmpl::list<>>>;
 };
@@ -106,6 +106,7 @@ struct MockObserverComponent {
 template <typename System, bool HasAnalyticSolution>
 struct Metavariables {
   using system = System;
+  static constexpr size_t volume_dim = system::volume_dim;
   using component_list = tmpl::list<ElementComponent<Metavariables>,
                                     MockObserverComponent<Metavariables>>;
   using const_global_cache_tags =

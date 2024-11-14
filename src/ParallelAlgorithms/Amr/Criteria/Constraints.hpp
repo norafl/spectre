@@ -159,6 +159,8 @@ class Constraints : public Criterion {
                              Events::Tags::ObserverJacobianCompute<
                                  Dim, Frame::ElementLogical, Frame::Inertial>>>;
 
+  std::string observation_name() override { return "Constraints"; }
+
   using argument_tags = tmpl::list<::Tags::ObservationBox>;
 
   template <typename ComputeTagsList, typename DataBoxType,

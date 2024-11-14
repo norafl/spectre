@@ -177,6 +177,8 @@ class Loehner : public Criterion {
   WRAPPED_PUPable_decl_template(Loehner);  // NOLINT
   /// \endcond
 
+  std::string observation_name() override { return "Loehner"; }
+
   using compute_tags_for_observation_box = tmpl::list<>;
 
   using argument_tags = tmpl::list<::Tags::DataBox>;
