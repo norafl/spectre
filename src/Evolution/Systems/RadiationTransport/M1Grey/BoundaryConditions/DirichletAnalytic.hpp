@@ -22,8 +22,11 @@
 #include "Options/String.hpp"
 #include "PointwiseFunctions/AnalyticData/Tags.hpp"
 #include "PointwiseFunctions/AnalyticSolutions/AnalyticSolution.hpp"
+#include "PointwiseFunctions/AnalyticSolutions/RadiationTransport/M1Grey/Factory.hpp"
 #include "PointwiseFunctions/GeneralRelativity/Tags.hpp"
 #include "PointwiseFunctions/Hydro/Tags.hpp"
+#include "PointwiseFunctions/InitialDataUtilities/Tags/InitialData.hpp"
+#include "Utilities/CallWithDynamicType.hpp"
 #include "Utilities/Gsl.hpp"
 #include "Utilities/Serialization/CharmPupable.hpp"
 #include "Utilities/TMPL.hpp"
@@ -53,7 +56,14 @@ template <typename... NeutrinoSpecies>
 class DirichletAnalytic<tmpl::list<NeutrinoSpecies...>> final
     : public BoundaryCondition<tmpl::list<NeutrinoSpecies...>> {
  public:
-  using options = tmpl::list<>;
+  /// \brief What analytic solution/data to prescribe.
+  struct AnalyticPrescription {
+    static constexpr Options::String help =
+        "What analytic solution/data to prescribe.";
+    using type = std::unique_ptr<evolution::initial_data::InitialData>;
+  };
+
+  using options = tmpl::list<AnalyticPrescription>;
   static constexpr Options::String help{
       "DirichletAnalytic boundary conditions using either analytic solution or "
       "analytic data."};
@@ -61,9 +71,26 @@ class DirichletAnalytic<tmpl::list<NeutrinoSpecies...>> final
   DirichletAnalytic() = default;
   DirichletAnalytic(DirichletAnalytic&&) = default;
   DirichletAnalytic& operator=(DirichletAnalytic&&) = default;
-  DirichletAnalytic(const DirichletAnalytic&) = default;
-  DirichletAnalytic& operator=(const DirichletAnalytic&) = default;
+
+  DirichletAnalytic(const DirichletAnalytic& rhs)
+      : BoundaryCondition<tmpl::list<NeutrinoSpecies...>>{dynamic_cast<
+            const BoundaryCondition<tmpl::list<NeutrinoSpecies...>>&>(rhs)},
+        analytic_prescription_(rhs.analytic_prescription_->get_clone()) {}
+
+  DirichletAnalytic& operator=(const DirichletAnalytic& rhs) {
+    if (&rhs == this) {
+      return *this;
+    }
+    analytic_prescription_ = rhs.analytic_prescription_->get_clone();
+    return *this;
+  }
+
   ~DirichletAnalytic() override = default;
+
+  explicit DirichletAnalytic(
+      std::unique_ptr<evolution::initial_data::InitialData>
+          analytic_prescription)
+      : analytic_prescription_(std::move(analytic_prescription)) {}
 
   explicit DirichletAnalytic(CkMigrateMessage* msg)
       : BoundaryCondition<tmpl::list<NeutrinoSpecies...>>(msg) {}
@@ -81,16 +108,15 @@ class DirichletAnalytic<tmpl::list<NeutrinoSpecies...>> final
 
   void pup(PUP::er& p) override {
     BoundaryCondition<tmpl::list<NeutrinoSpecies...>>::pup(p);
+    p | analytic_prescription_;
   }
 
   using dg_interior_evolved_variables_tags = tmpl::list<>;
   using dg_interior_temporary_tags =
       tmpl::list<domain::Tags::Coordinates<3, Frame::Inertial>>;
   using dg_interior_primitive_variables_tags = tmpl::list<>;
-  using dg_gridless_tags =
-      tmpl::list<::Tags::Time, ::Tags::AnalyticSolutionOrData>;
+  using dg_gridless_tags = tmpl::list<::Tags::Time>;
 
-  template <typename AnalyticSolutionOrData>
   std::optional<std::string> dg_ghost(
       const gsl::not_null<typename Tags::TildeE<
           Frame::Inertial, NeutrinoSpecies>::type*>... tilde_e,
@@ -111,35 +137,47 @@ class DirichletAnalytic<tmpl::list<NeutrinoSpecies...>> final
           tnsr::I<DataVector, 3, Frame::Inertial>>& /*face_mesh_velocity*/,
       const tnsr::i<DataVector, 3, Frame::Inertial>& /*normal_covector*/,
       const tnsr::I<DataVector, 3, Frame::Inertial>& /*normal_vector*/,
-      const tnsr::I<DataVector, 3, Frame::Inertial>& coords, const double time,
-      const AnalyticSolutionOrData& analytic_solution_or_data) const {
-    auto boundary_values = [&analytic_solution_or_data, &coords, &time]() {
-      if constexpr (is_analytic_solution_v<AnalyticSolutionOrData>) {
-        return analytic_solution_or_data.variables(
-            coords, time,
-            tmpl::list<Tags::TildeE<Frame::Inertial, NeutrinoSpecies>...,
-                       Tags::TildeS<Frame::Inertial, NeutrinoSpecies>...,
-                       hydro::Tags::LorentzFactor<DataVector>,
-                       hydro::Tags::SpatialVelocity<DataVector, 3>,
-                       gr::Tags::Lapse<DataVector>,
-                       gr::Tags::Shift<DataVector, 3>,
-                       gr::Tags::SpatialMetric<DataVector, 3>,
-                       gr::Tags::InverseSpatialMetric<DataVector, 3>>{});
+      const tnsr::I<DataVector, 3, Frame::Inertial>& coords,
+      const double time) const {
+    auto boundary_values = call_with_dynamic_type<
+        tuples::TaggedTuple<Tags::TildeE<Frame::Inertial, NeutrinoSpecies>...,
+                            Tags::TildeS<Frame::Inertial, NeutrinoSpecies>...,
+                            hydro::Tags::LorentzFactor<DataVector>,
+                            hydro::Tags::SpatialVelocity<DataVector, 3>,
+                            gr::Tags::Lapse<DataVector>,
+                            gr::Tags::Shift<DataVector, 3>,
+                            gr::Tags::SpatialMetric<DataVector, 3>,
+                            gr::Tags::InverseSpatialMetric<DataVector, 3>>,
+        RadiationTransport::M1Grey::Solutions::all_solutions>(
+        analytic_prescription_.get(),
+        [&coords, &time](const auto* const analytic_solution_or_data) {
+          if constexpr (is_analytic_solution_v<std::decay_t<
+                            decltype(*analytic_solution_or_data)>>) {
+            return analytic_solution_or_data->variables(
+                coords, time,
+                tmpl::list<Tags::TildeE<Frame::Inertial, NeutrinoSpecies>...,
+                           Tags::TildeS<Frame::Inertial, NeutrinoSpecies>...,
+                           hydro::Tags::LorentzFactor<DataVector>,
+                           hydro::Tags::SpatialVelocity<DataVector, 3>,
+                           gr::Tags::Lapse<DataVector>,
+                           gr::Tags::Shift<DataVector, 3>,
+                           gr::Tags::SpatialMetric<DataVector, 3>,
+                           gr::Tags::InverseSpatialMetric<DataVector, 3>>{});
 
-      } else {
-        (void)time;
-        return analytic_solution_or_data.variables(
-            coords,
-            tmpl::list<Tags::TildeE<Frame::Inertial, NeutrinoSpecies>...,
-                       Tags::TildeS<Frame::Inertial, NeutrinoSpecies>...,
-                       hydro::Tags::LorentzFactor<DataVector>,
-                       hydro::Tags::SpatialVelocity<DataVector, 3>,
-                       gr::Tags::Lapse<DataVector>,
-                       gr::Tags::Shift<DataVector, 3>,
-                       gr::Tags::SpatialMetric<DataVector, 3>,
-                       gr::Tags::InverseSpatialMetric<DataVector, 3>>{});
-      }
-    }();
+          } else {
+            (void)time;
+            return analytic_solution_or_data->variables(
+                coords,
+                tmpl::list<Tags::TildeE<Frame::Inertial, NeutrinoSpecies>...,
+                           Tags::TildeS<Frame::Inertial, NeutrinoSpecies>...,
+                           hydro::Tags::LorentzFactor<DataVector>,
+                           hydro::Tags::SpatialVelocity<DataVector, 3>,
+                           gr::Tags::Lapse<DataVector>,
+                           gr::Tags::Shift<DataVector, 3>,
+                           gr::Tags::SpatialMetric<DataVector, 3>,
+                           gr::Tags::InverseSpatialMetric<DataVector, 3>>{});
+          }
+        });
 
     *inv_spatial_metric =
         get<gr::Tags::InverseSpatialMetric<DataVector, 3>>(boundary_values);
@@ -214,6 +252,9 @@ class DirichletAnalytic<tmpl::list<NeutrinoSpecies...>> final
         tilde_e, tilde_s, flux_tilde_e, flux_tilde_s, NeutrinoSpecies{})...);
     return {};
   }
+
+ private:
+  std::unique_ptr<evolution::initial_data::InitialData> analytic_prescription_;
 };
 
 /// \cond

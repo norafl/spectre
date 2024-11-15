@@ -16,6 +16,7 @@ spectre_target_headers(
   INCLUDE_DIRECTORY ${CMAKE_SOURCE_DIR}/src
   HEADERS
   ConstantM1.hpp
+  Factory.hpp
   Solutions.hpp
   )
 
