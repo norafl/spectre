@@ -12,7 +12,8 @@ void center_of_mass_surface_integrand(
     const Scalar<DataVector>& conformal_factor,
     const tnsr::I<DataVector, 3>& coords) {
   const auto euclidean_radius = magnitude(coords);
-  tenex::evaluate<ti::I>(result, 3. / (8. * M_PI) * pow<4>(conformal_factor()) *
+  tenex::evaluate<ti::I>(result, 3. / (8. * M_PI) *
+                                     (pow<4>(conformal_factor()) - 1.) *
                                      coords(ti::I) / euclidean_radius());
 }
 
