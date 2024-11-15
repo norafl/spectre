@@ -288,14 +288,40 @@ def control_id(
     # Initialize Jacobian as an identity matrix
     J = np.identity(len(u))
 
+    # Indices of parameters for which the control is delayed in the first
+    # iterations to avoid going off-bounds
+    #
+    # Note: We have experimented with other modifications to Broyden's
+    # method, including damping the initial updates of the free data / Jacobian
+    # and enforcing a diagonal Jacobian. None of them converged as fast as the
+    # delay approach used here. When doing a more complete study in parameter
+    # space, we should try to find a more robust approach that works for
+    # multiple configurations.
+    delayed_indices = np.array([], dtype=bool)
+    delayed_params = ["center_of_mass", "linear_momentum"]
+    max_delayed_iteration = 1
+    for key in control_params.keys():
+        if key in ScalarQuantities:
+            delayed_indices = np.append(
+                delayed_indices, [key in delayed_params]
+            )
+        else:
+            delayed_indices = np.append(
+                delayed_indices, [key in delayed_params] * 3
+            )
+
     while iteration < max_iterations and np.max(np.abs(F)) > residual_tolerance:
         iteration += 1
 
         # Update the free parameters using a quasi-Newton-Raphson method
         Delta_u = -np.dot(np.linalg.inv(J), F)
+        if iteration <= max_delayed_iteration:
+            Delta_u[delayed_indices] = 0.0
         u += Delta_u
 
         F = Residual(u)
+        if iteration <= max_delayed_iteration:
+            F[delayed_indices] = 0.0
 
         # Update the Jacobian using Broyden's method
         J += np.outer(F, Delta_u) / np.dot(Delta_u, Delta_u)
