@@ -367,6 +367,12 @@ def generate_xdmf(
                 + str(available_subfiles(h5file, extension=".vol"))
             ) from err
         topo_dim = int(vol_subfile.attrs["dimension"])
+        if topo_dim == 1:
+            raise ValueError(
+                "The spatial dimension of the data in subfile"
+                f" {subfile_name} of HDF5 file {filename} is 1d "
+                "but generate-xdmf only works on 2d and 3d data."
+            )
 
         # Use paths relative to the output file or absolute paths
         filename_in_output = (
