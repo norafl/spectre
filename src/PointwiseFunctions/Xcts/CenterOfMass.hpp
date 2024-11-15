@@ -13,15 +13,36 @@ namespace Xcts {
 /*!
  * \brief Surface integrand for the center of mass calculation.
  *
- * We define the center of mass integral as (see Eq. 25 in
- * \cite Ossokine2015yla):
+ * We define the center of mass integral as
  *
  * \begin{equation}
  *   C_\text{CoM}^i = \frac{3}{8 \pi M_\text{ADM}}
- *               \oint_{S_\infty} \psi^4 n^i \, dA,
+ *               \oint_{S_\infty} (\psi^4 - 1) n^i \, dA,
  * \end{equation}
  *
  * where $n^i = x^i / r$ and $r = \sqrt{x^2 + y^2 + z^2}$.
+ *
+ * Analytically, this is identical to the definition in Eq. (25) of
+ * \cite Ossokine2015yla because
+ * \begin{equation}
+ *   \oint_{S_\infty} n^i \, dA = 0.
+ * \end{equation}
+ * Numerically, we have found that subtracting $1$ from $\psi^4$ results in less
+ * round-off errors, leading to a more accurate center of mass.
+ *
+ * One way to interpret this integral is that we are summing over the unit
+ * vectors $n^i$, rescaled by $\psi^4$, in all directions. If $\psi(\vec r)$ is
+ * constant, no rescaling happens and all the unit vectors cancel out. If
+ * $\psi(\vec r)$ is not constant, then $\vec C_\text{CoM}$ will emerge from the
+ * difference of large numbers (sum of rescaled $n^i$ in each subdomain). With
+ * larger and larger numbers being involved in this cancellation (i.e. with
+ * increasing radius of $S_\infty$), we loose numerical accuracy. In other
+ * words, we are seeking the subdominant terms. Since $\psi^4 \to 1$ in
+ * conformal flatness, subtracting $1$ from it in the integrand makes the
+ * numbers involved in this cancellation smaller, reducing this issue. We have
+ * also tried different variations of this integrand with the same motivation,
+ * but $(\psi^4 - 1)$ is the best one when taking simplicity and accuracy gain
+ * into consideration.
  *
  * \note We don't include the ADM mass $M_{ADM}$ in this integrand. After
  * integrating the result of this function, you have to divide by $M_{ADM}$.
