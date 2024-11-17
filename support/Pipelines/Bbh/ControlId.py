@@ -149,7 +149,7 @@ def control_id(
     radial_expansion_velocity = binary_data["Expansion"]
 
     # File to write control diagnostic data
-    data_file = open(f"{id_run_dir}/ControlParamsData.txt", "w")
+    data_file = open(f"{id_run_dir}/../ControlParamsData.txt", "w")
 
     iteration = 0
     control_run_dir = id_run_dir
@@ -166,7 +166,7 @@ def control_id(
                 f" Control of BBH Parameters ({iteration}) "
                 "=========================================="
             )
-            control_run_dir = f"{id_run_dir}/ControlParams{iteration:02}"
+            control_run_dir = f"{id_run_dir}/../ControlParams_{iteration:03}"
 
             # Start with initial free data choices and update the ones being
             # controlled in `control_params` with the numeric value from `u`

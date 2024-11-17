@@ -128,6 +128,7 @@ def generate_id(
     pipeline_dir: Optional[Union[str, Path]] = None,
     run_dir: Optional[Union[str, Path]] = None,
     segments_dir: Optional[Union[str, Path]] = None,
+    out_file_name: str = "spectre.out",
     **scheduler_kwargs,
 ):
     """Generate initial data for a BBH simulation.
@@ -169,6 +170,7 @@ def generate_id(
         subdirectory '001_InitialData'.
       run_dir: Directory where the initial data is generated. Mutually exclusive
         with 'pipeline_dir'.
+      out_file_name: Optional. Name of the log file. (Default: "spectre.out")
     """
     logger.warning(
         "The BBH pipeline is still experimental. Please review the"
@@ -196,6 +198,9 @@ def generate_id(
         )
     if pipeline_dir and not run_dir:
         run_dir = pipeline_dir / "001_InitialData"
+    if control:
+        run_dir = f"{run_dir}/ControlParams_000"
+        out_file_name = f"../{out_file_name}"
 
     # Determine initial data parameters from options
     id_params = id_parameters(
@@ -223,6 +228,7 @@ def generate_id(
         pipeline_dir=pipeline_dir,
         run_dir=run_dir,
         segments_dir=segments_dir,
+        out_file_name=out_file_name,
     )
 
 
