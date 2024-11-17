@@ -120,8 +120,8 @@ struct MockMetavariables {
   using const_global_cache_tags = tmpl::list<
       domain::Tags::Domain<Dim>,
       CurvedScalarWave::Tags::BackgroundSpacetime<gr::Solutions::KerrSchild>,
-      Tags::ExcisionSphere<Dim>, Tags::ExpansionOrder, Tags::MaxIterations,
-      Tags::Charge, Tags::Mass>;
+      Tags::ExcisionSphere<Dim>, Tags::WorldtubeRadius, Tags::ExpansionOrder,
+      Tags::MaxIterations, Tags::Charge, Tags::Mass>;
 };
 
 void test_iterations(const size_t max_iterations) {
@@ -166,10 +166,15 @@ void test_iterations(const size_t max_iterations) {
     tuples::TaggedTuple<
         domain::Tags::Domain<Dim>,
         CurvedScalarWave::Tags::BackgroundSpacetime<gr::Solutions::KerrSchild>,
-        Tags::ExcisionSphere<Dim>, Tags::ExpansionOrder, Tags::MaxIterations,
-        Tags::Charge, Tags::Mass>
-        tuple_of_opts{shell.create_domain(),   kerr_schild,    excision_sphere,
-                      expansion_order,         max_iterations, charge,
+        Tags::ExcisionSphere<Dim>, Tags::WorldtubeRadius, Tags::ExpansionOrder,
+        Tags::MaxIterations, Tags::Charge, Tags::Mass>
+        tuple_of_opts{shell.create_domain(),
+                      kerr_schild,
+                      excision_sphere,
+                      excision_sphere.radius(),
+                      expansion_order,
+                      max_iterations,
+                      charge,
                       std::make_optional(mass)};
     ActionTesting::MockRuntimeSystem<metavars> runner{std::move(tuple_of_opts)};
     const auto element_ids = initial_element_ids(initial_refinements);

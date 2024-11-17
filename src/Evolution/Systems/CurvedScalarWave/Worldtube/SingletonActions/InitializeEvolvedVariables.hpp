@@ -33,6 +33,7 @@ struct InitializeEvolvedVariables {
 
   using simple_tags =
       tmpl::list<variables_tag, dt_variables_tag, Tags::CurrentIteration,
+                 Tags::ExpirationTime, Tags::WorldtubeRadius,
                  ::Tags::HistoryEvolvedVariables<variables_tag>>;
   using return_tags = simple_tags;
 
@@ -41,7 +42,8 @@ struct InitializeEvolvedVariables {
   using mutable_global_cache_tags = tmpl::list<>;
   using simple_tags_from_options = tmpl::list<Tags::InitialPositionAndVelocity>;
   using argument_tags = tmpl::list<::Tags::TimeStepper<TimeStepper>,
-                                   Tags::InitialPositionAndVelocity>;
+                                   Tags::InitialPositionAndVelocity,
+                                   ::Tags::Time, Tags::ExcisionSphere<Dim>>;
   static void apply(
       const gsl::not_null<Variables<
           tmpl::list<Tags::EvolvedPosition<Dim>, Tags::EvolvedVelocity<Dim>>>*>
@@ -51,11 +53,20 @@ struct InitializeEvolvedVariables {
                                ::Tags::dt<Tags::EvolvedVelocity<Dim>>>>*>
           dt_evolved_vars,
       const gsl::not_null<size_t*> current_iteration,
+      const gsl::not_null<double*> expiration_time,
+      const gsl::not_null<double*> worldtube_radius,
       const gsl::not_null<::Tags::HistoryEvolvedVariables<variables_tag>::type*>
           time_stepper_history,
       const TimeStepper& time_stepper,
-      const std::array<tnsr::I<double, Dim>, 2>& initial_pos_and_vel) {
+      const std::array<tnsr::I<double, Dim>, 2>& initial_pos_and_vel,
+      const double initial_time, const ExcisionSphere<Dim>& excision_sphere) {
     *current_iteration = 0;
+
+    // the functions of time should be ready during the first step but not the
+    // second. We choose the arbitrary value of 1e-10 here to ensure this.
+    *expiration_time = initial_time + 1e-10;
+    *worldtube_radius = excision_sphere.radius();
+
     const size_t starting_order =
         time_stepper.number_of_past_steps() == 0 ? time_stepper.order() : 1;
     *time_stepper_history =
