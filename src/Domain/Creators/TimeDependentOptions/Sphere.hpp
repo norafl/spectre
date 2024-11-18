@@ -35,12 +35,6 @@ namespace domain::creators::sphere {
 /*!
  * \brief This holds all options related to the time dependent maps of the
  * domain::creators::Sphere domain creator.
- *
- * \details Currently this class will only add a Shape map (and size
- * FunctionOfTime) to the domain. Other maps can be added as needed.
- *
- * \note This struct contains no information about what blocks the time
- * dependent maps will go in.
  */
 struct TimeDependentMapOptions {
  private:
@@ -195,8 +189,16 @@ struct TimeDependentMapOptions {
     std::array<std::array<double, 3>, 3> initial_values{};
   };
 
+  struct TransitionRotScaleTrans {
+    using type = bool;
+    static constexpr Options::String help = {
+        "Transition rotation, expansion, and translation to zero in the outer "
+        "shell"};
+  };
+
   using options = tmpl::list<InitialTime, ShapeMapOptions, RotationMapOptions,
-                             ExpansionMapOptions, TranslationMapOptions>;
+                             ExpansionMapOptions, TranslationMapOptions,
+                             TransitionRotScaleTrans>;
   static constexpr Options::String help{
       "The options for all the hard-coded time dependent maps in the "
       "Sphere domain."};
@@ -207,7 +209,8 @@ struct TimeDependentMapOptions {
       double initial_time, std::optional<ShapeMapOptions> shape_map_options,
       std::optional<RotationMapOptions> rotation_map_options,
       std::optional<ExpansionMapOptions> expansion_map_options,
-      std::optional<TranslationMapOptions> translation_map_options);
+      std::optional<TranslationMapOptions> translation_map_options,
+      bool transition_rot_scale_trans);
 
   /*!
    * \brief Create the function of time map using the options that were
@@ -224,8 +227,7 @@ struct TimeDependentMapOptions {
    */
   std::unordered_map<std::string,
                      std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>
-  create_functions_of_time(double inner_radius,
-                           const std::unordered_map<std::string, double>&
+  create_functions_of_time(const std::unordered_map<std::string, double>&
                                initial_expiration_times) const;
 
   /*!
@@ -239,42 +241,41 @@ struct TimeDependentMapOptions {
    * - Expansion outside the transition region: `ExpansionOuterBoundary`
    * - Translation: `Translation`
    */
-  void build_maps(const std::array<double, 3>& center,
-                  std::pair<double, double> inner_shell_radii,
-                  std::pair<double, double> outer_shell_radii);
+  void build_maps(const std::array<double, 3>& center, bool is_filled,
+                  double inner_radius,
+                  const std::vector<double>& radial_partitions,
+                  double outer_radius);
 
   /*!
    * \brief This will construct the map from `Frame::Distorted` to
    * `Frame::Inertial`.
    *
-   * If the argument `include_distorted_map` is true, then this will be a
-   * RotScaleTrans map. If it is false, then this returns `nullptr`.
+   * For blocks with a shape map, this will be a RotScaleTrans map. For other
+   * blocks, this returns `nullptr`.
    */
   MapType<Frame::Distorted, Frame::Inertial> distorted_to_inertial_map(
-      bool include_distorted_map) const;
+      size_t block_number, bool is_inner_cube) const;
 
   /*!
    * \brief This will construct the map from `Frame::Grid` to
    * `Frame::Distorted`.
    *
-   * If the argument `include_distorted_map` is true, then this will add a
-   * `Shape` map (with a size function of time). If it is false, then this
-   * returns `nullptr`.
+   * For blocks with a shape map, this will return the `Shape` map (with a size
+   * function of time). For other blocks, this returns `nullptr`.
    */
   MapType<Frame::Grid, Frame::Distorted> grid_to_distorted_map(
-      bool include_distorted_map) const;
+      size_t block_number, bool is_inner_cube) const;
 
   /*!
-   * \brief This will construct the map from `Frame::Grid` to
-   * `Frame::Inertial`.
+   * \brief This will construct the map from `Frame::Grid` to `Frame::Inertial`.
    *
-   * If the argument `include_distorted_map` is true, then this map will
-   * have a `Shape` map (with a size function of time). If it is false, then
-   * there will be a RotScaleTrans map in either the inner region or in the
-   * transition region.
+   * For blocks with a shape map, this will return the `Shape` and
+   * `RotScaleTrans` composition. For other blocks, this returns just the
+   * `RotScaleTrans` map. In the outer shell, the `RotScaleTrans` map will
+   * transition to zero.
    */
   MapType<Frame::Grid, Frame::Inertial> grid_to_inertial_map(
-      bool include_distorted_map, bool use_rigid) const;
+      size_t block_number, bool is_outer_shell, bool is_inner_cube) const;
 
   /*!
    * \brief Whether or not the distorted frame is being used. I.e. whether or
@@ -292,7 +293,9 @@ struct TimeDependentMapOptions {
 
  private:
   double initial_time_{std::numeric_limits<double>::signaling_NaN()};
-  std::optional<ShapeMap> shape_map_{};
+  bool filled_{false};
+  double deformed_radius_{std::numeric_limits<double>::signaling_NaN()};
+  std::array<ShapeMap, 12> shape_maps_{};
   RotScaleTransMap inner_rot_scale_trans_map_{};
   RotScaleTransMap transition_rot_scale_trans_map_{};
 
@@ -300,5 +303,6 @@ struct TimeDependentMapOptions {
   std::optional<RotationMapOptions> rotation_map_options_{};
   std::optional<ExpansionMapOptions> expansion_map_options_{};
   std::optional<TranslationMapOptions> translation_map_options_{};
+  bool transition_rot_scale_trans_{false};
 };
 }  // namespace domain::creators::sphere

@@ -269,21 +269,21 @@ TimeDependentMapOptions<IsCylindrical>::create_functions_of_time(
       };
 
   if (shape_options_A_.has_value()) {
-    if (not inner_radii_[0].has_value()) {
+    if (not deformed_radii_[0].has_value()) {
       ERROR(
           "A shape map was specified for object A, but no inner radius is "
           "available. The object must be enclosed by a sphere.");
     }
-    build_shape_and_size_fot(shape_options_A_.value(), *inner_radii_[0],
+    build_shape_and_size_fot(shape_options_A_.value(), *deformed_radii_[0],
                              shape_names[0], size_names[0]);
   }
   if (shape_options_B_.has_value()) {
-    if (not inner_radii_[1].has_value()) {
+    if (not deformed_radii_[1].has_value()) {
       ERROR(
           "A shape map was specified for object B, but no inner radius is "
           "available. The object must be enclosed by a sphere.");
     }
-    build_shape_and_size_fot(shape_options_B_.value(), *inner_radii_[1],
+    build_shape_and_size_fot(shape_options_B_.value(), *deformed_radii_[1],
                              shape_names[1], size_names[1]);
   }
 
@@ -352,7 +352,7 @@ void TimeDependentMapOptions<IsCylindrical>::build_maps(
     const auto& radii = radii_opt.value();
     const bool filled = i == 0 ? object_A_filled : object_B_filled;
     // Store the inner radii for creating functions of time
-    gsl::at(inner_radii_, i) = radii[0];
+    gsl::at(deformed_radii_, i) = filled ? radii[1] : radii[0];
 
     const size_t initial_l_max = i == 0 ? shape_options_A_.value().l_max
                                         : shape_options_B_.value().l_max;

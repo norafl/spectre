@@ -39,6 +39,7 @@
 #include "Domain/Creators/TimeDependence/UniformTranslation.hpp"
 #include "Domain/Creators/TimeDependentOptions/ShapeMap.hpp"
 #include "Domain/Domain.hpp"
+#include "Domain/ElementMap.hpp"
 #include "Domain/FunctionsOfTime/PiecewisePolynomial.hpp"
 #include "Domain/Structure/BlockNeighbor.hpp"
 #include "Domain/Structure/Direction.hpp"
@@ -154,6 +155,7 @@ std::string option_string(
                               "    TranslationMap:\n"
                               "      InitialValues: [[0.0, 0.0, 0.0],"
                               " [0.001, -0.003, 0.005], [0.0, 0.0, 0.0]]\n"
+                              "    TransitionRotScaleTrans: False\n"
                             : "  TimeDependentMaps:\n"
                               "    UniformTranslation:\n"
                               "      InitialTime: 1.0\n"
@@ -196,7 +198,7 @@ std::string option_string(
 // wedges is the positive zeta direction. These coordinates will be used to
 // ensure the points lie on concentric spheres defined by either the inner
 // sphere, outer sphere, or radial partition parameters.
-tnsr::I<double, 3, Frame::BlockLogical> logical_coords(
+tnsr::I<double, 3, Frame::ElementLogical> logical_coords(
     const gsl::not_null<std::mt19937*> gen, const bool is_inner_cube,
     const bool abuts_inner_cube) {
   std::uniform_real_distribution<> real_dis(-1, 1);
@@ -238,7 +240,7 @@ tnsr::I<double, 3, Frame::BlockLogical> logical_coords(
     eta_logical_coord = rand_real_eta;
   }
 
-  return tnsr::I<double, 3, Frame::BlockLogical>{
+  return tnsr::I<double, 3, Frame::ElementLogical>{
       {{xi_logical_coord, eta_logical_coord, zeta_logical_coord}}};
 }
 
@@ -251,9 +253,7 @@ void test_sphere_construction(
     const ShellWedges which_wedges = ShellWedges::All,
     const bool expect_boundary_conditions = true,
     const std::vector<double>& times = {0.},
-    const std::array<double, 3>& velocity = {{0., 0., 0.}},
-    const std::array<double, 3>& size_values = {{0., 0., 0.}},
-    const bool use_hard_coded_maps = true) {
+    const std::array<double, 3>& velocity = {{0., 0., 0.}}) {
   // check consistency of domain
   const auto domain = TestHelpers::domain::creators::test_domain_creator(
       sphere, expect_boundary_conditions, false, times);
@@ -308,121 +308,30 @@ void test_sphere_construction(
     const auto& block = blocks[block_id];
     const auto& boundary_conditions = all_boundary_conditions[block_id];
     const bool is_inner_cube = fill_interior and block_id == num_blocks - 1;
-
+    const ElementMap<3, Frame::Inertial> element_map{ElementId<3>{block_id},
+                                                     block};
     {
       INFO("Block boundaries are spherical");
       // This section tests if the logical coordinates of corners from all
       // blocks (and points on upper wedge faces) lie on spherical shells
       // specified by inner radius, radial partitions, or outer radius
-      const auto coords_on_spherical_partition = logical_coords(
+      //
+      // First, get the element-logical coordinates of a random block corner
+      const auto logical_block_corner = logical_coords(
           gen, is_inner_cube,
           fill_interior and alg::any_of(block.neighbors(), abuts_inner_cube));
       for (const double current_time : times) {
         CAPTURE(current_time);
+        // Map the logical block corner through the domain and undo the
+        // translation to get its distance from the center
+        auto inertial_block_corner =
+            element_map(logical_block_corner, current_time, functions_of_time);
+        const double delta_t = current_time - 1.0;
+        for (size_t i = 0; i < 3; ++i) {
+          inertial_block_corner.get(i) -= gsl::at(velocity, i) * delta_t;
+        }
         const double corner_distance_from_origin =
-            [&block, &coords_on_spherical_partition, &current_time, &block_id,
-             &num_blocks_per_shell, &inner_radius, &outer_radius,
-             &radial_partitioning, &size_values, &functions_of_time, &velocity,
-             &is_inner_cube, &num_blocks, &use_hard_coded_maps]() -> double {
-          // use stationary map if independent of time
-          if (not block.is_time_dependent()) {
-            return get(magnitude(
-                block.stationary_map()(coords_on_spherical_partition)));
-          } else {
-            // go from logical to grid coords, then grid to inertial coords
-            const auto inertial_location_time_dep =
-                block.moving_mesh_grid_to_inertial_map()(
-                    block.moving_mesh_logical_to_grid_map()(
-                        coords_on_spherical_partition, current_time,
-                        functions_of_time),
-                    current_time, functions_of_time);
-            const double target_radius =
-                get(magnitude(inertial_location_time_dep));
-            const double delta_t = current_time - 1.0;
-
-            double temp_radius = target_radius;
-            if (use_hard_coded_maps) {
-              // Undo the translation
-              if (block_id + num_blocks_per_shell < num_blocks and
-                  not is_inner_cube) {
-                // For inner shells we are using a translation time dependence.
-                // origin in inertial frame (need to shift inertial
-                // coord by velocity * (final_time - initial_time))
-
-                temp_radius = sqrt(square(get<0>(inertial_location_time_dep) -
-                                          velocity[0] * (delta_t)) +
-                                   square(get<1>(inertial_location_time_dep) -
-                                          velocity[1] * (delta_t)) +
-                                   square(get<2>(inertial_location_time_dep) -
-                                          velocity[2] * (delta_t)));
-              } else {
-                // For the outer shell there is a linear transition that leaves
-                // the outer boundary fixed
-                const double min_radius = radial_partitioning.back();
-                const double max_radius = outer_radius;
-                // The radial falloff factor is determined with respect to the
-                // grid frame
-                const auto grid_location_time_dep =
-                    block.moving_mesh_logical_to_grid_map()(
-                        coords_on_spherical_partition, current_time,
-                        functions_of_time);
-                const double grid_target_radius =
-                    get(magnitude(grid_location_time_dep));
-                const double radial_falloff_factor =
-                    (max_radius - grid_target_radius) /
-                    (max_radius - min_radius);
-
-                temp_radius = sqrt(
-                    square(get<0>(inertial_location_time_dep) -
-                           radial_falloff_factor * velocity[0] * (delta_t)) +
-                    square(get<1>(inertial_location_time_dep) -
-                           radial_falloff_factor * velocity[1] * (delta_t)) +
-                    square(get<2>(inertial_location_time_dep) -
-                           radial_falloff_factor * velocity[2] * (delta_t)));
-              }
-
-              // Only when using hard coded time dependent maps do we have
-              // distorted maps in the inner shell.
-              if (block.has_distorted_frame()) {
-                CHECK(block_id < num_blocks_per_shell);
-                // This is the calculation of the inverse of the
-                // SphericalCompression map since the shape map is the identity
-                // currently
-                const double min_radius = inner_radius;
-                const double max_radius = not radial_partitioning.empty()
-                                              ? radial_partitioning[0]
-                                              : outer_radius;
-                const double func =
-                    gsl::at(size_values, 0) +
-                    gsl::at(size_values, 1) * delta_t +
-                    0.5 * gsl::at(size_values, 2) * square(delta_t);
-                const double func_Y00 = func / sqrt(4.0 * M_PI);
-                const double max_minus_min = max_radius - min_radius;
-                const double scale =
-                    (max_minus_min + func_Y00 * max_radius / target_radius) /
-                    (max_minus_min + func_Y00);
-
-                return temp_radius * scale;
-              } else {
-                // This happens in our test if we have hard coded time dependent
-                // maps, but we aren't in the first shell. Then it's just the
-                // identity map
-                return temp_radius;
-              }
-
-            } else {
-              // This means we are using a translation time dependence.
-              // origin in inertial frame (need to shift inertial
-              // coord by velocity * (final_time - initial_time))
-              return sqrt(square(get<0>(inertial_location_time_dep) -
-                                 velocity[0] * (delta_t)) +
-                          square(get<1>(inertial_location_time_dep) -
-                                 velocity[1] * (delta_t)) +
-                          square(get<2>(inertial_location_time_dep) -
-                                 velocity[2] * (delta_t)));
-            }  // end block.has_distorted_frame if/else-if/else
-          }    // end time-dependent if/else
-        }();   // end lambda
+            get(magnitude(inertial_block_corner));
         CAPTURE(corner_distance_from_origin);
         CAPTURE(expected_corner_radii);
         const auto match_demarcation =
@@ -593,22 +502,6 @@ void test_parse_errors() {
       Catch::Matchers::ContainsSubstring(
           "None boundary condition is not supported. If you would like "
           "an outflow-type boundary condition, you must use that."));
-  using TDMO = domain::creators::sphere::TimeDependentMapOptions;
-  CHECK_THROWS_WITH(
-      creators::Sphere(inner_radius, outer_radius, inner_cube, refinement,
-                       initial_extents, use_equiangular_map,
-                       equatorial_compression, radial_partitioning,
-                       radial_distribution, which_wedges,
-                       TDMO{1.0, TDMO::ShapeMapOptions{5, std::nullopt},
-                            std::nullopt, std::nullopt,
-                            TDMO::TranslationMapOptions{
-                                {std::array<double, 3>{0.0, 0.0, 0.0},
-                                 std::array<double, 3>{0.001, -0.003, 0.005},
-                                 std::array<double, 3>{0.0, 0.0, 0.0}}}},
-                       nullptr),
-      Catch::Matchers::ContainsSubstring(
-          "Currently cannot use hard-coded time dependent maps with an inner "
-          "cube. Use a TimeDependence instead."));
 }
 
 template <typename Generator>
@@ -641,7 +534,6 @@ void test_sphere(const gsl::not_null<Generator*> gen) {
                            {domain::CoordinateMaps::Distribution::Linear}}};
 
   const std::array<double, 3> velocity{{2.3, -0.3, 0.5}};
-  const std::array<double, 3> size_values{0.0, 0.0, 0.0};
   const size_t l_max = 10;
   const std::vector<double> times{1., 10.};
 
@@ -670,20 +562,18 @@ void test_sphere(const gsl::not_null<Generator*> gen) {
     CAPTURE(time_dependent);
     CAPTURE(with_boundary_conditions);
     // If we aren't time dependent, just set the hard coded option to false to
-    // avoid ambiguity. If we are time dependent but we're filling the interior,
-    // then we can't use hard coded options
-    if ((not time_dependent) or fill_interior) {
+    // avoid ambiguity
+    if (not time_dependent) {
       use_hard_coded_time_dep_options = false;
     }
     CAPTURE(use_hard_coded_time_dep_options);
 
     // If we are using hard coded maps, we need at least two shells (or one
     // radial partition) for the translation map.
-    const auto array_index =
-        (use_hard_coded_time_dep_options and
-                 gsl::at(radial_partitioning, index).empty()
-             ? index + 1
-             : index);
+    auto array_index = (use_hard_coded_time_dep_options and
+                                gsl::at(radial_partitioning, index).empty()
+                            ? index + 1
+                            : index);
     CAPTURE(gsl::at(radial_partitioning, array_index));
     CAPTURE(gsl::at(radial_distribution, array_index));
 
@@ -713,7 +603,8 @@ void test_sphere(const gsl::not_null<Generator*> gen) {
             std::nullopt, std::nullopt,
             creators::sphere::TimeDependentMapOptions::TranslationMapOptions{
                 {std::array<double, 3>{0.0, 0.0, 0.0}, translation_velocity,
-                 std::array<double, 3>{0.0, 0.0, 0.0}}});
+                 std::array<double, 3>{0.0, 0.0, 0.0}}},
+            false);
       } else {
         time_dependent_options = std::make_unique<
             domain::creators::time_dependence::UniformTranslation<3, 0>>(
@@ -739,8 +630,7 @@ void test_sphere(const gsl::not_null<Generator*> gen) {
         gen, sphere, inner_radius, outer_radius, fill_interior,
         gsl::at(radial_partitioning, array_index), which_wedges,
         with_boundary_conditions,
-        time_dependent ? times : std::vector<double>{0.}, translation_velocity,
-        size_values, use_hard_coded_time_dep_options);
+        time_dependent ? times : std::vector<double>{1.}, translation_velocity);
     TestHelpers::domain::creators::test_creation(
         option_string(inner_radius, outer_radius, interior, initial_refinement,
                       initial_extents, equiangular, equatorial_compression,
@@ -755,16 +645,19 @@ void test_sphere(const gsl::not_null<Generator*> gen) {
 void test_shape_distortion_general(
     const double time,
     domain::creators::Sphere::TimeDepOptionType time_dependent_options,
-    const double inner_radius, const tnsr::I<DataVector, 3>& x) {
-  domain::creators::Sphere domain_creator{
-      inner_radius,
+    const double deformed_radius, const bool fill_interior,
+    const tnsr::I<DataVector, 3>& x) {
+  using Sphere = domain::creators::Sphere;
+  const Sphere domain_creator{
+      fill_interior ? 0.5 * deformed_radius : deformed_radius,
       10.,
-      domain::creators::Sphere::Excision{},
+      fill_interior ? Interior{Sphere::InnerCube{0.0}}
+                    : Interior{Sphere::Excision{}},
       0_st,
       6_st,
       true,
-      {},
-      {4.},
+      std::nullopt,
+      {fill_interior ? deformed_radius : 4.},
       domain::CoordinateMaps::Distribution::Linear,
       ShellWedges::All,
       std::move(time_dependent_options)};
@@ -777,7 +670,7 @@ void test_shape_distortion_general(
   for (size_t i = 0; i < get<0>(x).size(); ++i) {
     CAPTURE(x_logical[i]);
     REQUIRE(x_logical[i].has_value());
-    CHECK(get<2>(x_logical[i]->data) == approx(-1.));
+    CHECK(abs(get<2>(x_logical[i]->data)) == approx(1.));
   }
 }
 
@@ -816,19 +709,23 @@ void test_shape_distortion() {
         inner_radius, 4.);
 
     test_shape_distortion_general(time, std::move(time_dependent_options),
-                                  inner_radius, x);
+                                  inner_radius, false, x);
 
     // KerrSchild-BoyerLindquist. Use same x as above
-    time_dependent_options = domain::creators::sphere::TimeDependentMapOptions{
-        time,
-        {{l_max, domain::creators::time_dependent_options::
-                     KerrSchildFromBoyerLindquist{mass, spin}}},
-        std::nullopt,
-        std::nullopt,
-        std::nullopt};
-
-    test_shape_distortion_general(time, std::move(time_dependent_options),
-                                  inner_radius, x);
+    for (const bool fill_interior : {true, false}) {
+      CAPTURE(fill_interior);
+      time_dependent_options =
+          domain::creators::sphere::TimeDependentMapOptions{
+              time,
+              {{l_max, domain::creators::time_dependent_options::
+                           KerrSchildFromBoyerLindquist{mass, spin}}},
+              std::nullopt,
+              std::nullopt,
+              std::nullopt,
+              not fill_interior};
+      test_shape_distortion_general(time, std::move(time_dependent_options),
+                                    inner_radius, fill_interior, x);
+    }
   }
 
   {
@@ -865,10 +762,11 @@ void test_shape_distortion() {
           std::array{-4.6442771561420703730e-01, 0.0, 0.0}}},
         std::nullopt,
         std::nullopt,
-        std::nullopt};
+        std::nullopt,
+        true};
 
     test_shape_distortion_general(time, std::move(time_dependent_options),
-                                  inner_radius, x);
+                                  inner_radius, false, x);
 
     if (file_system::check_if_file_exists(h5_filename)) {
       file_system::rm(h5_filename, true);

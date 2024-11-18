@@ -17,6 +17,7 @@
 #include "Domain/CoordinateMaps/CoordinateMap.tpp"
 #include "Domain/CoordinateMaps/TimeDependent/ShapeMapTransitionFunctions/ShapeMapTransitionFunction.hpp"
 #include "Domain/CoordinateMaps/TimeDependent/ShapeMapTransitionFunctions/SphereTransition.hpp"
+#include "Domain/CoordinateMaps/TimeDependent/ShapeMapTransitionFunctions/Wedge.hpp"
 #include "Domain/Creators/TimeDependentOptions/ShapeMap.hpp"
 #include "Domain/FunctionsOfTime/FixedSpeedCubic.hpp"
 #include "Domain/FunctionsOfTime/FunctionOfTime.hpp"
@@ -57,17 +58,18 @@ TimeDependentMapOptions::TimeDependentMapOptions(
     const double initial_time, std::optional<ShapeMapOptions> shape_map_options,
     std::optional<RotationMapOptions> rotation_map_options,
     std::optional<ExpansionMapOptions> expansion_map_options,
-    std::optional<TranslationMapOptions> translation_map_options)
+    std::optional<TranslationMapOptions> translation_map_options,
+    const bool transition_rot_scale_trans)
     : initial_time_(initial_time),
       shape_map_options_(std::move(shape_map_options)),
       rotation_map_options_(std::move(rotation_map_options)),
       expansion_map_options_(std::move(expansion_map_options)),
-      translation_map_options_(std::move(translation_map_options)) {}
+      translation_map_options_(std::move(translation_map_options)),
+      transition_rot_scale_trans_(transition_rot_scale_trans) {}
 
 std::unordered_map<std::string,
                    std::unique_ptr<domain::FunctionsOfTime::FunctionOfTime>>
 TimeDependentMapOptions::create_functions_of_time(
-    const double inner_radius,
     const std::unordered_map<std::string, double>& initial_expiration_times)
     const {
   std::unordered_map<std::string,
@@ -90,7 +92,7 @@ TimeDependentMapOptions::create_functions_of_time(
   if (shape_map_options_.has_value()) {
     auto [shape_funcs, size_funcs] =
         time_dependent_options::initial_shape_and_size_funcs(
-            shape_map_options_.value(), inner_radius);
+            shape_map_options_.value(), deformed_radius_);
 
     // ShapeMap FunctionOfTime
     result[shape_name] =
@@ -183,24 +185,79 @@ TimeDependentMapOptions::create_functions_of_time(
 }
 
 void TimeDependentMapOptions::build_maps(
-    const std::array<double, 3>& center,
-    std::pair<double, double> inner_shell_radii,
-    std::pair<double, double> outer_shell_radii) {
+    const std::array<double, 3>& center, const bool filled,
+    const double inner_radius, const std::vector<double>& radial_partitions,
+    const double outer_radius) {
+  filled_ = filled;
   if (shape_map_options_.has_value()) {
     std::unique_ptr<domain::CoordinateMaps::ShapeMapTransitionFunctions::
                         ShapeMapTransitionFunction>
-        transition_func =
-            std::make_unique<domain::CoordinateMaps::
-                                 ShapeMapTransitionFunctions::SphereTransition>(
-                inner_shell_radii.first, inner_shell_radii.second);
-    shape_map_ = ShapeMap{center,
-                          shape_map_options_->l_max,
-                          shape_map_options_->l_max,
-                          std::move(transition_func),
-                          shape_name,
-                          size_name};
+        transition_func;
+    if (filled_) {
+      if (transition_rot_scale_trans_ and radial_partitions.size() < 2) {
+        ERROR(
+            "Currently at least two radial partitions are required to "
+            "transition the RotScaleTrans map to zero in the outer shell "
+            "when a shape map is present and the interior is filled.");
+      }
+      using WedgeTransition =
+          domain::CoordinateMaps::ShapeMapTransitionFunctions::Wedge;
+      // Shape map transitions from 0 to 1 from the inner cube to this surface
+      deformed_radius_ =
+          radial_partitions.empty() ? outer_radius : radial_partitions.front();
+      // Shape map transitions from 1 to 0 from the deformed surface to the next
+      // radial partition or to the outer radius
+      const bool has_shape_rolloff = not radial_partitions.empty();
+      const double shape_outer_radius =
+          radial_partitions.size() > 1 ? radial_partitions[1] : outer_radius;
+      // These must match the order of orientations_for_sphere_wrappings() in
+      // DomainHelpers.hpp. The values must match that of Wedge::Axis
+      const std::array<int, 6> axes{3, -3, 2, -2, 1, -1};
+      for (size_t j = 0; j < (has_shape_rolloff ? 12 : 6); ++j) {
+        if (j < 6) {
+          // Reverse the transition function so the shape map goes to zero at
+          // the inner cube
+          transition_func = std::make_unique<WedgeTransition>(
+              center, inner_radius, /* inner_sphericity */ 0.0, center,
+              deformed_radius_,
+              /* outer_sphericity */ 1.0,
+              static_cast<WedgeTransition::Axis>(gsl::at(axes, j)),
+              /* reverse */ true);
+        } else {
+          transition_func = std::make_unique<WedgeTransition>(
+              center, deformed_radius_, /* inner_sphericity */ 1.0, center,
+              shape_outer_radius,
+              /* outer_sphericity */ 1.0,
+              static_cast<WedgeTransition::Axis>(gsl::at(axes, j % 6)));
+        }
+        gsl::at(shape_maps_, j) = ShapeMap{center,
+                                           shape_map_options_->l_max,
+                                           shape_map_options_->l_max,
+                                           std::move(transition_func),
+                                           shape_name,
+                                           size_name};
+      }
+    } else {
+      // Shape map transitions from 1 to 0 from the inner radius to the first
+      // radial partition or to the outer radius
+      deformed_radius_ = inner_radius;
+      const double shape_outer_radius =
+          radial_partitions.empty() ? outer_radius : radial_partitions.front();
+      transition_func =
+          std::make_unique<domain::CoordinateMaps::ShapeMapTransitionFunctions::
+                               SphereTransition>(inner_radius,
+                                                 shape_outer_radius);
+      shape_maps_[0] = ShapeMap{center,
+                                shape_map_options_->l_max,
+                                shape_map_options_->l_max,
+                                std::move(transition_func),
+                                shape_name,
+                                size_name};
+    }
   }
 
+  const double outer_shell_inner_radius =
+      radial_partitions.empty() ? inner_radius : radial_partitions.back();
   inner_rot_scale_trans_map_ = RotScaleTransMap{
       expansion_map_options_.has_value()
           ? std::optional<std::pair<
@@ -213,35 +270,44 @@ void TimeDependentMapOptions::build_maps(
       translation_map_options_.has_value()
           ? std::optional<std::string>{translation_name}
           : std::nullopt,
-      outer_shell_radii.first,
-      outer_shell_radii.second,
+      outer_shell_inner_radius,
+      outer_radius,
       domain::CoordinateMaps::TimeDependent::RotScaleTrans<
           3>::BlockRegion::Inner};
-
-  transition_rot_scale_trans_map_ = RotScaleTransMap{
-      expansion_map_options_.has_value()
-          ? std::optional<std::pair<
-                std::string, std::string>>{{expansion_name,
-                                            expansion_outer_boundary_name}}
-          : std::nullopt,
-      rotation_map_options_.has_value()
-          ? std::optional<std::string>{rotation_name}
-          : std::nullopt,
-      translation_map_options_.has_value()
-          ? std::optional<std::string>{translation_name}
-          : std::nullopt,
-      outer_shell_radii.first,
-      outer_shell_radii.second,
-      domain::CoordinateMaps::TimeDependent::RotScaleTrans<
-          3>::BlockRegion::Transition};
+  if (transition_rot_scale_trans_) {
+    if (radial_partitions.empty()) {
+      ERROR(
+          "Currently at least one radial partition is required to transition "
+          "the RotScaleTrans map to zero in the outer shell.");
+    }
+    transition_rot_scale_trans_map_ = RotScaleTransMap{
+        expansion_map_options_.has_value()
+            ? std::optional<std::pair<
+                  std::string, std::string>>{{expansion_name,
+                                              expansion_outer_boundary_name}}
+            : std::nullopt,
+        rotation_map_options_.has_value()
+            ? std::optional<std::string>{rotation_name}
+            : std::nullopt,
+        translation_map_options_.has_value()
+            ? std::optional<std::string>{translation_name}
+            : std::nullopt,
+        outer_shell_inner_radius,
+        outer_radius,
+        domain::CoordinateMaps::TimeDependent::RotScaleTrans<
+            3>::BlockRegion::Transition};
+  }
 }
 
 // If you edit any of the functions below, be sure to update the documentation
 // in the Sphere domain creator as well as this class' documentation.
 TimeDependentMapOptions::MapType<Frame::Distorted, Frame::Inertial>
 TimeDependentMapOptions::distorted_to_inertial_map(
-    const bool include_distorted_map) const {
-  if (include_distorted_map) {
+    const size_t block_number, const bool is_inner_cube) const {
+  const bool block_has_shape_map = shape_map_options_.has_value() and
+                                   block_number < (filled_ ? 12 : 6) and
+                                   not is_inner_cube;
+  if (block_has_shape_map) {
     return std::make_unique<DistortedToInertialComposition>(
         inner_rot_scale_trans_map_);
   } else {
@@ -250,36 +316,45 @@ TimeDependentMapOptions::distorted_to_inertial_map(
 }
 
 TimeDependentMapOptions::MapType<Frame::Grid, Frame::Distorted>
-TimeDependentMapOptions::grid_to_distorted_map(
-    const bool include_distorted_map) const {
-  if (include_distorted_map) {
-    if (not shape_map_.has_value()) {
-      ERROR(
-          "Requesting grid to distorted map with distorted frame but shape map "
-          "options were not specified.");
-    }
-    return std::make_unique<GridToDistortedComposition>(shape_map_.value());
+TimeDependentMapOptions::grid_to_distorted_map(const size_t block_number,
+                                               const bool is_inner_cube) const {
+  const bool block_has_shape_map = shape_map_options_.has_value() and
+                                   block_number < (filled_ ? 12 : 6) and
+                                   not is_inner_cube;
+  if (block_has_shape_map) {
+    // If the interior is not filled we use the SphereTransition function and
+    // build only one shape map at index 0 (see `build_maps` above). Otherwise,
+    // we use the Wedge transition function and build a shape map for each
+    // direction, so we have to use the block number here to get the correct
+    // shape map.
+    return std::make_unique<GridToDistortedComposition>(
+        gsl::at(shape_maps_, filled_ ? block_number : 0));
   } else {
     return nullptr;
   }
 }
 
 TimeDependentMapOptions::MapType<Frame::Grid, Frame::Inertial>
-TimeDependentMapOptions::grid_to_inertial_map(const bool include_distorted_map,
-                                              const bool use_rigid) const {
-  if (include_distorted_map) {
-    if (not shape_map_.has_value()) {
-      ERROR(
-          "Requesting grid to inertial map with distorted frame but shape map "
-          "options were not specified.");
-    }
+TimeDependentMapOptions::grid_to_inertial_map(const size_t block_number,
+                                              const bool is_outer_shell,
+                                              const bool is_inner_cube) const {
+  const bool block_has_shape_map = shape_map_options_.has_value() and
+                                   block_number < (filled_ ? 12 : 6) and
+                                   not is_inner_cube;
+  if (block_has_shape_map) {
+    // If the interior is not filled we use the SphereTransition function and
+    // build only one shape map at index 0 (see `build_maps` above). Otherwise,
+    // we use the Wedge transition function and build a shape map for each
+    // direction, so we have to use the block number here to get the correct
+    // shape map.
     return std::make_unique<GridToInertialComposition>(
-        shape_map_.value(), inner_rot_scale_trans_map_);
-  } else if (use_rigid) {
-    return std::make_unique<GridToInertialSimple>(inner_rot_scale_trans_map_);
-  } else {
+        gsl::at(shape_maps_, filled_ ? block_number : 0),
+        inner_rot_scale_trans_map_);
+  } else if (is_outer_shell and transition_rot_scale_trans_) {
     return std::make_unique<GridToInertialSimple>(
         transition_rot_scale_trans_map_);
+  } else {
+    return std::make_unique<GridToInertialSimple>(inner_rot_scale_trans_map_);
   }
 }
 

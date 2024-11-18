@@ -255,36 +255,10 @@ Sphere::Sphere(
     use_hard_coded_maps_ =
         std::holds_alternative<sphere::TimeDependentMapOptions>(
             time_dependent_options_.value());
-
     if (use_hard_coded_maps_) {
-      if (fill_interior_) {
-        PARSE_ERROR(context,
-                    "Currently cannot use hard-coded time dependent maps with "
-                    "an inner cube. Use a TimeDependence instead.");
-      }
-
-      // Build the maps. We only apply the maps in the inner-most shell. The
-      // inner radius is what's passed in, but the outer radius is the outer
-      // radius of the inner-most shell so we have to see how many shells we
-      // have.
-      // The transition region for the rotation, expansion and translation maps
-      // occurs only in the outer-most shell. We require at least one radial
-      // partition, as the transition requires spherical shape.
-
-      if (radial_partitioning_.empty()) {
-        PARSE_ERROR(context,
-                    "The hard-coded translation map requires at least two "
-                    "shells. Use at least one radial partition.");
-      }
-
       std::get<sphere::TimeDependentMapOptions>(time_dependent_options_.value())
-          .build_maps(
-              std::array{0.0, 0.0, 0.0},
-              // Inner shell radii for the Shape map
-              std::pair<double, double>{inner_radius_, radial_partitioning_[0]},
-              // Outer shell radii for the transition region
-              std::pair<double, double>{radial_partitioning_.back(),
-                                        outer_radius_});
+          .build_maps(std::array{0.0, 0.0, 0.0}, fill_interior_, inner_radius_,
+                      radial_partitioning_, outer_radius_);
     }
   }
 }
@@ -387,27 +361,28 @@ Domain<3> Sphere::create_domain() const {
           std::get<sphere::TimeDependentMapOptions>(
               time_dependent_options_.value());
 
-      // First shell gets the distorted maps.
-      // Last shell gets the transition region for the rotation, expansion and
-      // translation maps
-      const bool include_distorted_frame =
-          hard_coded_options.using_distorted_frame();
+      const size_t first_block_outer_shell =
+          (num_shells_ - 1) * num_blocks_per_shell_;
       for (size_t block_id = 0; block_id < num_blocks_; block_id++) {
-        const bool include_distorted_map_in_first_shell =
-            include_distorted_frame and block_id < num_blocks_per_shell_;
-        // False if block_id is in the last shell
-        const bool use_rigid =
-            block_id + num_blocks_per_shell_ + (fill_interior_ ? 1 : 0) <
-            num_blocks_;
+        const bool is_outer_shell =
+            block_id >= first_block_outer_shell and
+            block_id < (first_block_outer_shell + num_blocks_per_shell_);
+        const bool is_inner_cube =
+            fill_interior_ and (block_id == num_blocks_ - 1);
+        // Correct for 'which_wedges' option
+        const size_t shell = block_id / num_blocks_per_shell_;
+        const size_t block_number = shell * 6 +
+                                    which_wedge_index(which_wedges_) +
+                                    block_id % num_blocks_per_shell_;
         block_maps_grid_to_distorted[block_id] =
-            hard_coded_options.grid_to_distorted_map(
-                include_distorted_map_in_first_shell);
+            hard_coded_options.grid_to_distorted_map(block_number,
+                                                     is_inner_cube);
         block_maps_distorted_to_inertial[block_id] =
-            hard_coded_options.distorted_to_inertial_map(
-                include_distorted_map_in_first_shell);
+            hard_coded_options.distorted_to_inertial_map(block_number,
+                                                         is_inner_cube);
         block_maps_grid_to_inertial[block_id] =
             hard_coded_options.grid_to_inertial_map(
-                include_distorted_map_in_first_shell, use_rigid);
+                block_number, is_outer_shell, is_inner_cube);
       }
     } else {
       const auto& time_dependence = std::get<std::unique_ptr<
@@ -478,7 +453,7 @@ Sphere::functions_of_time(const std::unordered_map<std::string, double>&
     if (use_hard_coded_maps_) {
       return std::get<sphere::TimeDependentMapOptions>(
                  time_dependent_options_.value())
-          .create_functions_of_time(inner_radius_, initial_expiration_times);
+          .create_functions_of_time(initial_expiration_times);
     } else {
       return std::get<std::unique_ptr<
           domain::creators::time_dependence::TimeDependence<3>>>(

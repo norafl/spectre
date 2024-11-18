@@ -108,8 +108,9 @@ void test() {
   domain::FunctionsOfTime::register_derived_with_charm();
 
   using TDMO = domain::creators::sphere::TimeDependentMapOptions;
-  TDMO time_dep_opts{0.0, TDMO::ShapeMapOptions{2, std::nullopt}, std::nullopt,
-                     std::nullopt, std::nullopt};
+  TDMO time_dep_opts{0.0,          TDMO::ShapeMapOptions{2, std::nullopt},
+                     std::nullopt, std::nullopt,
+                     std::nullopt, true};
 
   const auto domain_creator = domain::creators::Sphere(
       0.9, 4.9, domain::creators::Sphere::Excision{}, 1_st, 7_st, false, {},
