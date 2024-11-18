@@ -485,6 +485,9 @@ class Kernel:
 def transform_volume_data(
     volfiles: Union[spectre_h5.H5Vol, Iterable[spectre_h5.H5Vol]],
     kernels: Sequence[Kernel],
+    start_time: Optional[float] = None,
+    stop_time: Optional[float] = None,
+    stride: int = 1,
     integrate: bool = False,
     force: bool = False,
 ) -> Union[None, Dict[str, Sequence[float]]]:
@@ -497,6 +500,11 @@ def transform_volume_data(
         files will be transformed.
       kernels: List of transformations to apply to the volume data in the form
         of 'Kernel' objects.
+      start_time: The earliest time at which to start processing data. The
+        start-time value is included.
+      stop_time: The time at which to stop processing data. The stop-time value
+        is included.
+      stride: Process only every 'stride'th time step.
       integrate: Compute the volume integral over the kernels instead of
         writing them back into the volume files. The integral is computed in
         inertial coordinates for every tensor component of all kernels and over
@@ -539,13 +547,28 @@ def transform_volume_data(
     if isinstance(volfiles, spectre_h5.H5Vol):
         volfiles = [volfiles]
     for volfile in volfiles:
-        all_observation_ids = volfile.list_observation_ids()
-        num_obs = len(all_observation_ids)
-        if integrate and "Time" not in integrals:
-            integrals["Time"] = [
+        all_observation_ids = np.array(
+            volfile.list_observation_ids(),
+            dtype=np.uint64,
+        )
+        all_times = np.array(
+            [
                 volfile.get_observation_value(obs_id)
                 for obs_id in all_observation_ids
             ]
+        )
+        # Filter observations
+        observation_filter = np.ones_like(all_times, dtype=bool)
+        if start_time is not None:
+            observation_filter &= all_times >= start_time
+        if stop_time is not None:
+            observation_filter &= all_times <= stop_time
+        all_observation_ids = all_observation_ids[observation_filter][::stride]
+        all_times = all_times[observation_filter][::stride]
+        num_obs = len(all_observation_ids)
+
+        if integrate and "Time" not in integrals:
+            integrals["Time"] = all_times
 
         for i_obs, obs_id in enumerate(all_observation_ids):
             # Load tensor data for all kernels
@@ -754,6 +777,28 @@ def parse_kernels(kernels, exec_files, map_input_names, interactive=False):
         " specified multiple times. If unspecified, the argument name is"
         " transformed to CamelCase."
     ),
+)
+@click.option(
+    "--start-time",
+    type=float,
+    help=(
+        "The earliest time at which to start processing data. The start-time "
+        "value is included."
+    ),
+)
+@click.option(
+    "--stop-time",
+    type=float,
+    help=(
+        "The time at which to stop processing data. The stop-time value is "
+        "included."
+    ),
+)
+@click.option(
+    "--stride",
+    default=1,
+    type=int,
+    help="Process only every stride'th time step",
 )
 @click.option(
     "--integrate",
