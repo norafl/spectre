@@ -8,7 +8,7 @@ Machine:
     More information:
     https://github.com/sxs-collaboration/WelcomeToSXS/wiki/Mbot
   DefaultTasksPerNode: 6
-  DefaultProcsPerTasks: 32
+  DefaultProcsPerTask: 32
   DefaultQueue: "normal"
   DefaultTimeLimit: "1-00:00:00"
   LaunchCommandSingleNode: ["mpirun", "-n", "1"]

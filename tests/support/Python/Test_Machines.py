@@ -21,7 +21,8 @@ class TestMachines(unittest.TestCase):
                     Machine=dict(
                         Name="TestMachine",
                         Description="Just for testing",
-                        DefaultProcsPerNode=15,
+                        DefaultTasksPerNode=2,
+                        DefaultProcsPerTask=15,
                         DefaultQueue="production",
                         DefaultTimeLimit="1-00:00:00",
                         LaunchCommandSingleNode=["mpirun", "-n", "1"],
@@ -40,7 +41,8 @@ class TestMachines(unittest.TestCase):
         self.assertIsInstance(machine, Machine)
         self.assertEqual(machine.Name, "TestMachine")
         self.assertEqual(machine.Description, "Just for testing")
-        self.assertEqual(machine.DefaultProcsPerNode, 15)
+        self.assertEqual(machine.DefaultTasksPerNode, 2)
+        self.assertEqual(machine.DefaultProcsPerTask, 15)
         self.assertEqual(machine.DefaultQueue, "production")
         self.assertEqual(machine.DefaultTimeLimit, "1-00:00:00")
         self.assertEqual(machine.LaunchCommandSingleNode, ["mpirun", "-n", "1"])

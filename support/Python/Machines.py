@@ -41,10 +41,12 @@ class Machine(yaml.YAMLObject):
         any information that may help people get started using the machine.
         Provide links to wiki pages, signup pages, etc., for additional
         information.
-      DefaultProcsPerNode: Default number of worker threads spawned per node.
+      DefaultTasksPerNode: Default number of tasks per node (MPI ranks).
+        Often chosen to be the number of sockets on a node.
+      DefaultProcsPerTask: Default number of worker threads spawned per task.
         It is often advised to leave one core per node or socket free for
         communication, so this might be the number of cores or hyperthreads
-        per node minus one.
+        per node or socket minus one.
       DefaultQueue: Default queue that jobs are submitted to. On Slurm systems
         you can see the available queues with `sinfo`.
       DefaultTimeLimit: Default wall time limit for submitted jobs. For
@@ -62,7 +64,8 @@ class Machine(yaml.YAMLObject):
     # The YAML machine files can have these attributes:
     Name: str
     Description: str
-    DefaultProcsPerNode: int
+    DefaultTasksPerNode: int
+    DefaultProcsPerTask: int
     DefaultQueue: str
     DefaultTimeLimit: str
     LaunchCommandSingleNode: List[str]

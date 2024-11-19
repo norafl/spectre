@@ -9,7 +9,7 @@ Machine:
     https://www.hpc.caltech.edu/documentation
   # Split one physical 56 core node into two charm nodes
   DefaultTasksPerNode: 2
-  DefaultProcsPerTasks: 28
+  DefaultProcsPerTask: 28
   DefaultQueue: "expansion"
   DefaultTimeLimit: "1-00:00:00"
   LaunchCommandSingleNode: ["mpirun", "-n", "1"]

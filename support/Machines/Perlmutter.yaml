@@ -8,6 +8,6 @@ Machine:
     More information:
     https://docs.nersc.gov/systems/perlmutter/
   DefaultTasksPerNode: 8
-  DefaultProcsPerTasks: 32
+  DefaultProcsPerTask: 32
   DefaultQueue: "regular"
   DefaultTimeLimit: "1-00:00:00"
