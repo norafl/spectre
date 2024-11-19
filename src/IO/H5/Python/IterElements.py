@@ -138,7 +138,7 @@ def iter_elements(
     """
     if isinstance(volfiles, spectre_h5.H5Vol):
         volfiles = [volfiles]
-    if isinstance(obs_ids, int):
+    if isinstance(obs_ids, (int, np.integer)):
         obs_ids = [obs_ids]
     # Assuming the domain is the same in all volfiles at all observations to
     # speed up the script

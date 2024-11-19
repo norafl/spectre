@@ -141,7 +141,12 @@ class TestTransformVolumeData(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "already exists"):
             transform_volume_data(volfiles=open_volfiles, kernels=kernels)
         transform_volume_data(
-            volfiles=open_volfiles, kernels=kernels, force=True
+            volfiles=open_volfiles,
+            kernels=kernels,
+            force=True,
+            start_time=0,
+            stop_time=1,
+            stride=2,
         )
 
         obs_id = open_volfiles[0].list_observation_ids()[0]
@@ -246,6 +251,12 @@ class TestTransformVolumeData(unittest.TestCase):
             "element_data.vol",
             "-e",
             __file__,
+            "--start-time",
+            "0",
+            "--stop-time",
+            "1",
+            "--stride",
+            "2",
         ]
         result = runner.invoke(
             transform_volume_data_command,
