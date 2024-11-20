@@ -8,7 +8,7 @@ Machine:
     More information:
     https://it.icts.res.in/docs/sonic-cluster/
   DefaultTasksPerNode: 3
-  DefaultProcsPerTasks: 32
+  DefaultProcsPerTask: 32
   DefaultQueue: "long"
   DefaultTimeLimit: "1-00:00:00"
   LaunchCommandSingleNode: ["mpirun", "-n", "1"]

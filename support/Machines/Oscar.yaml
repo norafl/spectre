@@ -9,7 +9,7 @@ Machine:
     https://docs.ccv.brown.edu/oscar
   # Split one physical 32 core node into two charm nodes
   DefaultTasksPerNode: 2
-  DefaultProcsPerTasks: 16
+  DefaultProcsPerTask: 16
   DefaultQueue: "batch"
   DefaultTimeLimit: "1-00:00:00"
   LaunchCommandSingleNode: ["mpirun", "-n", "1"]
