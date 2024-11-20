@@ -476,7 +476,7 @@ struct TimeDerivative {
             }
           });
     }
-
+    /*
     if (UNLIKELY(fd_derivative_order != ::fd::DerivativeOrder::Two)) {
       ERROR(
           "We don't yet have high-order flux corrections for curved/moving "
@@ -487,7 +487,7 @@ struct TimeDerivative {
           "neighbors, which leaves the question as to whether to interpolate "
           "the _inertial fluxes_ and then transform or whether to transform "
           "and then interpolate the _densitized logical fluxes_.");
-    }
+          }*/
     std::optional<std::array<Variables<evolved_vars_tags>, 3>>
         high_order_corrections{};
     ::fd::cartesian_high_order_flux_corrections(
@@ -551,6 +551,8 @@ struct TimeDerivative {
 
       DataVector maybe_correction = 0.5 * (-get(boundary_upper) +
           get(boundary_lower));
+
+      maybe_correction *= 4.0/3.0;
 
       //Parallel::printf("\n\n boundary_correction%s\n", maybe_correction);
 
