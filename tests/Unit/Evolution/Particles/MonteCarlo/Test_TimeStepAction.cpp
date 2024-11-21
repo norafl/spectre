@@ -119,12 +119,7 @@ struct Metavariables {
                  Particles::MonteCarlo::Tags::InteractionRatesTable<4, 3>>;
 };
 
-void test_advance_packets(const bool skip) {
-  CHECK(true);
-  // This test FPEs because the ghost zone handling is broken.
-  if (skip) {
-    return;
-  }
+void test_advance_packets() {
 
   MAKE_GENERATOR(generator);
   const size_t Dim = 3;
@@ -202,7 +197,8 @@ void test_advance_packets(const bool skip) {
 
   // Fluid variables
   Scalar<DataVector> rest_mass_density(zero_dv);
-  Scalar<DataVector> lorentz_factor(zero_dv);
+  Scalar<DataVector> lorentz_factor =
+    make_with_value<Scalar<DataVector>>(lapse, 1.0);;
   Scalar<DataVector> electron_fraction(zero_dv);
   Scalar<DataVector> temperature(zero_dv);
   tnsr::i<DataVector, 3, Frame::Inertial> lower_spatial_four_velocity =
@@ -343,5 +339,5 @@ void test_advance_packets(const bool skip) {
 
 SPECTRE_TEST_CASE("Unit.Evolution.Particles.MonteCarloTimeStepAction",
                   "[Unit][Evolution]") {
-  test_advance_packets(true);
+  test_advance_packets();
 }
