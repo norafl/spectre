@@ -20,13 +20,7 @@
 
 namespace{
 
-void test_flat_space_time_step(const bool skip) {
-  CHECK(true);
-  // This test FPEs because the ghost zone handling is broken.
-  if (skip) {
-    return;
-  }
-
+void test_flat_space_time_step() {
   const Mesh<3> mesh(2, Spectral::Basis::FiniteDifference,
                      Spectral::Quadrature::CellCentered);
 
@@ -270,5 +264,5 @@ void test_flat_space_time_step(const bool skip) {
 
 SPECTRE_TEST_CASE("Unit.Evolution.Particles.MonteCarloTakeTimeStep",
                   "[Unit][Evolution]") {
-  test_flat_space_time_step(true);
+  test_flat_space_time_step();
 }
