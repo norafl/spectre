@@ -309,9 +309,12 @@ void NeutrinoInteractionTable<EnergyBins, NeutrinoSpecies>::
   double ye = 0.0;
   double log_rho = 0.0;
   double log_temp = 0.0;
+  const double minimum_density = exp(table_log_density[0]);
   for (size_t p = 0; p < get(electron_fraction).size(); p++) {
     ye = get(electron_fraction)[p];
-    log_rho = log(get(rest_mass_density)[p]);
+    log_rho = get(rest_mass_density)[p] > minimum_density
+                  ? log(get(rest_mass_density)[p])
+                  : log(minimum_density);
     log_temp = get(temperature)[p] > minimum_temperature
                    ? log(get(temperature)[p])
                    : log(minimum_temperature);
@@ -351,6 +354,12 @@ void NeutrinoInteractionTable<EnergyBins, NeutrinoSpecies>::
             square(square(temperature_correction_factor));
         gsl::at(gsl::at(*scattering_opacity, ns), ng)[p] *=
             square(square(temperature_correction_factor));
+        gsl::at(gsl::at(*absorption_opacity, ns), ng)[p] =
+            std::clamp(gsl::at(gsl::at(*absorption_opacity, ns), ng)[p],
+                       min_kappa, max_kappa);
+        gsl::at(gsl::at(*scattering_opacity, ns), ng)[p] =
+            std::clamp(gsl::at(gsl::at(*scattering_opacity, ns), ng)[p],
+                       min_kappa, max_kappa);
       }
     }
   }

@@ -155,11 +155,13 @@ void TemplatedLocalFunctions<EnergyBins, NeutrinoSpecies>::
     // We have all we need to calculate beta here. We take the largest of the
     // two variations
     get(beta)[i] = fabs(get(neutrino_energy_1)[i] - get(neutrino_energy_0)[i]) /
-                   fabs(get(fluid_energy_1)[i] - get(fluid_energy_0)[i]);
+                   (fabs(get(fluid_energy_1)[i] - get(fluid_energy_0)[i]) +
+                    1.e-16);
     const double beta_lepton =
         fabs(get(neutrino_lepton_number_1)[i] -
              get(neutrino_lepton_number_0)[i]) /
-        fabs(get(fluid_lepton_number_1)[i] - get(fluid_lepton_number_0)[i]);
+        (fabs(get(fluid_lepton_number_1)[i] - get(fluid_lepton_number_0)[i]) +
+         1.e-16);
     get(beta)[i] =
         std::max(get(beta)[i], beta_lepton);
   }
