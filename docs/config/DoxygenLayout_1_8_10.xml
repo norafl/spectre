@@ -5,13 +5,13 @@
     <tab type="mainpage" visible="yes" title="Main"/>
     <tab type="pages" visible="yes" title="Documentation" intro=""/>
     <tab type="user" visible="yes" title="GitHub repository" url="https://github.com/sxs-collaboration/spectre"/>
-    <tab type="modules" visible="yes" title="Code modules" intro=""/>
-    <tab type="usergroup" visible="yes" title="Code reference" url="namespaces.html">
-      <tab type="namespaces" visible="no" title="">
+    <tab type="usergroup" visible="yes" title="Code reference">
+      <tab type="modules" visible="yes" title="Topics" intro="Here is a list of all topics with brief descriptions:"/>
+      <tab type="namespaces" visible="yes" title="">
         <tab type="namespacelist" visible="yes" title="" intro=""/>
         <tab type="namespacemembers" visible="no" title="" intro=""/>
       </tab>
-      <tab type="classes" visible="no" title="">
+      <tab type="classes" visible="yes" title="">
         <tab type="classlist" visible="yes" title="" intro=""/>
         <tab type="classindex" visible="$ALPHABETICAL_INDEX" title=""/>
         <tab type="hierarchy" visible="no" title="" intro=""/>
