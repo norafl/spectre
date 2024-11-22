@@ -22,6 +22,18 @@ endif()
 find_package(Doxygen)
 if (DOXYGEN_FOUND)
   set(SPECTRE_DOXYGEN_GROUPS "${CMAKE_BINARY_DIR}/docs/tmp/GroupDefs.hpp")
+  # The layout file is doxygen version dependent.  There was a significant
+  # change in version 1.9.8 to support C++ modules.  Doxygen modules were
+  # renamed topics.  Minor changes in doxygen version may cause warnings
+  # about the layout file, but can appear to cause no problems
+  if(DOXYGEN_VERSION VERSION_LESS 1.9.8)
+    set(DOXYGEN_LAYOUT_FILE
+      "${PROJECT_SOURCE_DIR}/docs/config/DoxygenLayout_1_8_10.xml")
+  else()
+    set(DOXYGEN_LAYOUT_FILE
+      "${PROJECT_SOURCE_DIR}/docs/config/DoxygenLayout_1_9_8.xml"
+    )
+  endif()
 
   # For INPUT_FILTER in Doxyfile. Using Python instead of Perl here increases
   # docs generation time by ~25%. Runtimes are 102s (no filter), 108s (Perl) and

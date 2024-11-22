@@ -243,7 +243,7 @@ GENERATE_LEGEND        = NO
 # HTML layout file
 #---------------------------------------------------------------------------
 
-LAYOUT_FILE = @PROJECT_SOURCE_DIR@/docs/config/layout.xml
+LAYOUT_FILE = @DOXYGEN_LAYOUT_FILE@
 
 HTML_EXTRA_FILES       = @PROJECT_SOURCE_DIR@/docs/config/icons/octicons.eot \
                          @PROJECT_SOURCE_DIR@/docs/config/icons/octicons.svg \

@@ -446,7 +446,8 @@ license() {
               'docs/config/doxygen-awesome-paragraph-link.js' \
               'docs/config/footer.html' \
               'docs/config/header.html' \
-              'docs/config/layout.xml' \
+              'docs/config/DoxygenLayout_1_8_10.xml' \
+              'docs/config/DoxygenLayout_1_9_8.xml' \
               'docs/config/MathJax.js$' \
               'external/*' \
               'eos.*' \
