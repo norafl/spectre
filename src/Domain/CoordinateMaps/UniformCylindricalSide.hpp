@@ -212,7 +212,7 @@ namespace domain::CoordinateMaps {
  * We solve \f$Q(\lambda)=0\f$ numerically for \f$\lambda\f$,
  * where \f$Q(\lambda)\f$ is given by Eq. (\f$\ref{eq:defQ}\f$).
  *
- * ##### min/max values of \f$\lambda\f$:
+ * #### min/max values of \f$\lambda\f$:
  *
  * Note that the root we care about must have \f$-1\leq\bar{z}\leq 1\f$;
  * therefore from Eq. (\f$\ref{eq:zbar_from_lambda}\f$) we have

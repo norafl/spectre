@@ -379,13 +379,13 @@ struct Structure {
   }
 
   /// A mapping between each collapsed_index and its storage_index. See
-  /// \ref compute_collapsed_to_storage for details.
+  /// compute_collapsed_to_storage for details.
   static constexpr auto collapsed_to_storage_ =
       compute_collapsed_to_storage<Symm, number_of_components()>(
           make_cpp20_array_from_list<tmpl::conditional_t<
               sizeof...(Indices) == 0, size_t, index_list>>());
   /// A 1-1 mapping between each storage_index and its canonical tensor_index.
-  /// See \ref compute_storage_to_tensor for details.
+  /// See compute_storage_to_tensor for details.
   static constexpr auto storage_to_tensor_ = compute_storage_to_tensor<Symm,
                                                                        size()>(
       collapsed_to_storage_,
