@@ -10,6 +10,12 @@
 
 namespace CurvedScalarWave::Worldtube {
 
+namespace detail {
+void check_positive_time_and_timescale(double t_minus_turn_on,
+                                       double turn_on_timescale);
+
+}  // namespace detail
+
 /// @{
 /*!
  * \brief Computes the coordinate acceleration due to the scalar self-force onto
@@ -120,4 +126,29 @@ tnsr::A<double, Dim> dt_Du_self_force_per_mass(
     const tnsr::A<double, Dim>& dt_four_velocity,
     const tnsr::Abb<double, Dim>& christoffel,
     const tnsr::Abb<double, Dim>& dt_christoffel);
+
+/*!
+ * \brief A function used to roll-on the self-force continuously from 0 to 1
+ *
+ * \details It is given by Eq.(60) of \cite Wittek:2024gxn
+ * \begin{equation}
+ * w(t) = 1 - \exp \left( - \left( (t - t_{\mathrm{turn_on}}) / \sigma \right)^4
+ * \right), \end{equation} where $t$ is the current simulation time,
+ * $t_{\mathrm{turn_on}}$ is the time where the self-force is turned on and
+ * $\sigma$ dictates the timescale over which it is turned on. The function is
+ * $\mathcal{C}^3$, i.e. three times continuously differentiable, assuming $w(t)
+ * = 0$ for $t < t_{\mathrm{turn_on}}$.
+ */
+double turn_on_function(double t_minus_turn_on, double turn_on_timescale);
+
+/*!
+ * \brief The first derivative of `turn_on_function`
+ */
+double dt_turn_on_function(double t_minus_turn_on, double turn_on_timescale);
+
+/*!
+ * \brief The second derivative of `turn_on_function`
+ */
+double dt2_turn_on_function(double t_minus_turn_on, double turn_on_timescale);
+
 }  // namespace CurvedScalarWave::Worldtube

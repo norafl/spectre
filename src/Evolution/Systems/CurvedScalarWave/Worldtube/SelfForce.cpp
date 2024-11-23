@@ -11,6 +11,20 @@
 
 namespace CurvedScalarWave::Worldtube {
 
+namespace detail {
+void check_positive_time_and_timescale(const double t_minus_turn_on,
+                                       const double turn_on_timescale) {
+  if (t_minus_turn_on <= 0) {
+    ERROR("The time must be positive but is " << time);
+  }
+  if (turn_on_timescale <= 0) {
+    ERROR("The turn on timescale must be positive but is "
+          << turn_on_timescale);
+  }
+}
+
+}  // namespace detail
+
 template <size_t Dim>
 void self_force_acceleration(
     gsl::not_null<tnsr::I<double, Dim>*> self_force_acc,
@@ -131,6 +145,33 @@ tnsr::A<double, Dim> dt_Du_self_force_per_mass(
           self_force(ti::C) +
       christoffel(ti::A, ti::b, ti::c) * four_velocity(ti::B) *
           dt_self_force(ti::C));
+}
+
+double turn_on_function(const double t_minus_turn_on,
+                        const double turn_on_timescale) {
+  detail::check_positive_time_and_timescale(t_minus_turn_on, turn_on_timescale);
+  const double t_over_timescale = t_minus_turn_on / turn_on_timescale;
+  return 1. - exp(-square(square(t_over_timescale)));
+}
+
+double dt_turn_on_function(const double t_minus_turn_on,
+                           const double turn_on_timescale) {
+  detail::check_positive_time_and_timescale(t_minus_turn_on, turn_on_timescale);
+  const double t_over_timescale_quart =
+      square(square(t_minus_turn_on / turn_on_timescale));
+  return 4. * t_over_timescale_quart * exp(-t_over_timescale_quart) /
+         t_minus_turn_on;
+}
+
+double dt2_turn_on_function(const double t_minus_turn_on,
+                            const double turn_on_timescale) {
+  detail::check_positive_time_and_timescale(t_minus_turn_on, turn_on_timescale);
+  const double t_squared = square(t_minus_turn_on);
+  const double t_quart = square(t_squared);
+  const double timescale_quart = square(square(turn_on_timescale));
+  const double t_over_timescale_quart = t_quart / timescale_quart;
+  return 4. * t_squared * exp(-t_over_timescale_quart) *
+         (3. * timescale_quart - 4. * t_quart) / square(timescale_quart);
 }
 
 // Instantiations
