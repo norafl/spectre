@@ -121,7 +121,8 @@ struct MockMetavariables {
       domain::Tags::Domain<Dim>,
       CurvedScalarWave::Tags::BackgroundSpacetime<gr::Solutions::KerrSchild>,
       Tags::ExcisionSphere<Dim>, Tags::WorldtubeRadius, Tags::ExpansionOrder,
-      Tags::MaxIterations, Tags::Charge, Tags::Mass>;
+      Tags::MaxIterations, Tags::Charge, Tags::Mass, ::Tags::Time,
+      Tags::SelfForceTurnOnTime, Tags::SelfForceTurnOnInterval>;
 };
 
 void test_iterations(const size_t max_iterations) {
@@ -163,11 +164,14 @@ void test_iterations(const size_t max_iterations) {
 
     const auto& initial_refinements = shell.initial_refinement_levels();
     const auto& initial_extents = shell.initial_extents();
+    // unused but the tag is needed to compile
+    const double time = std::numeric_limits<double>::signaling_NaN();
     tuples::TaggedTuple<
         domain::Tags::Domain<Dim>,
         CurvedScalarWave::Tags::BackgroundSpacetime<gr::Solutions::KerrSchild>,
         Tags::ExcisionSphere<Dim>, Tags::WorldtubeRadius, Tags::ExpansionOrder,
-        Tags::MaxIterations, Tags::Charge, Tags::Mass>
+        Tags::MaxIterations, Tags::Charge, Tags::Mass, ::Tags::Time,
+        Tags::SelfForceTurnOnTime, Tags::SelfForceTurnOnInterval>
         tuple_of_opts{shell.create_domain(),
                       kerr_schild,
                       excision_sphere,
@@ -175,7 +179,10 @@ void test_iterations(const size_t max_iterations) {
                       expansion_order,
                       max_iterations,
                       charge,
-                      std::make_optional(mass)};
+                      std::make_optional(mass),
+                      time,
+                      std::nullopt,
+                      std::nullopt};
     ActionTesting::MockRuntimeSystem<metavars> runner{std::move(tuple_of_opts)};
     const auto element_ids = initial_element_ids(initial_refinements);
     const auto& blocks = shell_domain.blocks();

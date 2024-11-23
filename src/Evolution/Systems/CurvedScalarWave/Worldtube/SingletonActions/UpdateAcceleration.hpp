@@ -36,10 +36,12 @@ struct UpdateAcceleration {
   using argument_tags = tmpl::list<
       Tags::ParticlePositionVelocity<Dim>, Tags::BackgroundQuantities<Dim>,
       Tags::GeodesicAcceleration<Dim>,
+      Stf::Tags::StfTensor<Tags::PsiWorldtube, 0, Dim, Frame::Inertial>,
       Stf::Tags::StfTensor<::Tags::dt<Tags::PsiWorldtube>, 0, Dim,
                            Frame::Inertial>,
       Stf::Tags::StfTensor<Tags::PsiWorldtube, 1, Dim, Frame::Inertial>,
-      Tags::Charge, Tags::Mass, Tags::MaxIterations>;
+      Tags::Charge, Tags::Mass, Tags::MaxIterations, ::Tags::Time,
+      Tags::SelfForceTurnOnTime, Tags::SelfForceTurnOnInterval>;
   static void apply(
       gsl::not_null<
           Variables<tmpl::list<::Tags::dt<Tags::EvolvedPosition<Dim>>,
@@ -53,9 +55,11 @@ struct UpdateAcceleration {
           gr::Tags::TraceSpacetimeChristoffelSecondKind<double, Dim>,
           Tags::TimeDilationFactor>& background,
       const tnsr::I<double, Dim, Frame::Inertial>& geodesic_acc,
-      const Scalar<double>& dt_psi_monopole,
+      const Scalar<double>& psi_monopole, const Scalar<double>& dt_psi_monopole,
       const tnsr::i<double, Dim, Frame::Inertial>& psi_dipole, double charge,
-      std::optional<double> mass, size_t max_iterations);
+      std::optional<double> mass, size_t max_iterations, double time,
+      std::optional<double> turn_on_time,
+      std::optional<double> turn_on_interval);
 };
 
 }  // namespace CurvedScalarWave::Worldtube
