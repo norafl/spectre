@@ -266,8 +266,8 @@ double test(const size_t num_dg_pts) {
               grmhd::ValenciaDivClean::fd::MonotonisedCentralPrim>()},
       std::unique_ptr<
           grmhd::ValenciaDivClean::BoundaryCorrections::BoundaryCorrection>{
-          std::make_unique<
-              grmhd::ValenciaDivClean::BoundaryCorrections::Hll>()},
+          std::make_unique<grmhd::ValenciaDivClean::BoundaryCorrections::Hll>(
+              1.0e-30, 1.0e-8)},
       soln.equation_of_state().promote_to_3d_eos(), dg_spacetime_vars,
       dg_prim_vars,
       typename variables_tag::type{dg_mesh.number_of_grid_points()},

@@ -447,8 +447,8 @@ std::array<double, 5> test(const size_t num_dg_pts,
           std::make_unique<std::decay_t<decltype(recons)>>(recons)},
       std::unique_ptr<
           grmhd::ValenciaDivClean::BoundaryCorrections::BoundaryCorrection>{
-          std::make_unique<
-              grmhd::ValenciaDivClean::BoundaryCorrections::Hll>()},
+          std::make_unique<grmhd::ValenciaDivClean::BoundaryCorrections::Hll>(
+              1.0e-30, 1.0e-8)},
       soln.equation_of_state().promote_to_3d_eos(),
       cell_centered_spacetime_vars, cell_centered_prim_vars,
       Variables<typename dt_variables_tag::tags_list>{
