@@ -316,7 +316,7 @@ std::pair<T, T> toms748_solve(F f, const T& ax, const T& bx, const T& fax,
                               size_t& max_iter) {
   // Main entry point and logic for Toms Algorithm 748
   // root finder.
-  if (UNLIKELY(simd::any(ax >= bx))) {
+  if (UNLIKELY(simd::any(ax > bx))) {
     throw std::domain_error("Lower bound is larger than upper bound");
   }
 
