@@ -21,6 +21,7 @@
 #include "Helpers/DataStructures/MakeWithRandomValues.hpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "ParallelAlgorithms/Actions/MutateApply.hpp"
+#include "Time/Tags/Time.hpp"
 #include "Utilities/TMPL.hpp"
 
 namespace CurvedScalarWave::Worldtube {
@@ -56,20 +57,33 @@ SPECTRE_TEST_CASE("Unit.Evolution.Systems.CSW.Worldtube.UpdateAcceleration",
       make_with_random_values<Scalar<double>>(make_not_null(&gen), dist, 1);
   const Tags::BackgroundQuantities<Dim>::type background_quantities{
       metric, inverse_metric, christoffel, trace_christoffel, dilation};
+  const auto psi_monopole =
+      make_with_random_values<Scalar<double>>(make_not_null(&gen), dist, 1);
   const auto dt_psi_monopole =
       make_with_random_values<Scalar<double>>(make_not_null(&gen), dist, 1);
   const auto psi_dipole = make_with_random_values<tnsr::i<double, Dim>>(
       make_not_null(&gen), dist, 1);
+
+  const double mass = 0.1;
+  const double charge = 0.2;
+
+  const double time = 105.;
+  const double turn_on_time = 100.;
+  const double turn_on_interval = 10.;
   const size_t max_iterations = 0;
   auto box = db::create<db::AddSimpleTags<
       dt_variables_tag, Tags::ParticlePositionVelocity<Dim>,
       Tags::BackgroundQuantities<Dim>, Tags::GeodesicAcceleration<Dim>,
+      Stf::Tags::StfTensor<Tags::PsiWorldtube, 0, Dim, Frame::Inertial>,
       Stf::Tags::StfTensor<::Tags::dt<Tags::PsiWorldtube>, 0, Dim,
                            Frame::Inertial>,
       Stf::Tags::StfTensor<Tags::PsiWorldtube, 1, Dim, Frame::Inertial>,
-      Tags::Charge, Tags::Mass, Tags::MaxIterations>>(
+      Tags::Charge, Tags::Mass, Tags::MaxIterations, ::Tags::Time,
+      Tags::SelfForceTurnOnTime, Tags::SelfForceTurnOnInterval>>(
       std::move(dt_evolved_vars), pos_vel, background_quantities, geodesic_acc,
-      dt_psi_monopole, psi_dipole, 1., std::make_optional(1.), max_iterations);
+      psi_monopole, dt_psi_monopole, psi_dipole, charge,
+      std::make_optional(mass), max_iterations, time,
+      std::make_optional(turn_on_time), std::make_optional(turn_on_interval));
 
   db::mutate_apply<UpdateAcceleration>(make_not_null(&box));
   const auto& dt_vars = db::get<dt_variables_tag>(box);
@@ -87,13 +101,18 @@ SPECTRE_TEST_CASE("Unit.Evolution.Systems.CSW.Worldtube.UpdateAcceleration",
       make_not_null(&box));
 
   db::mutate_apply<UpdateAcceleration>(make_not_null(&box));
-  const auto self_force_acc = self_force_acceleration(
-      dt_psi_monopole, psi_dipole, vel, 1., 1., inverse_metric, dilation);
+
+  const double roll_on =
+      turn_on_function(time - turn_on_time, turn_on_interval);
+  const double evolved_mass = mass - charge * get(psi_monopole);
+  const auto self_force_acc =
+      self_force_acceleration(dt_psi_monopole, psi_dipole, vel, charge,
+                              evolved_mass, inverse_metric, dilation);
   for (size_t i = 0; i < Dim; ++i) {
     CHECK(get<::Tags::dt<Tags::EvolvedPosition<Dim>>>(dt_vars).get(i)[0] ==
           vel.get(i));
     CHECK(get<::Tags::dt<Tags::EvolvedVelocity<Dim>>>(dt_vars).get(i)[0] ==
-          geodesic_acc.get(i) + self_force_acc.get(i));
+          geodesic_acc.get(i) + roll_on * self_force_acc.get(i));
   }
 }
 }  // namespace

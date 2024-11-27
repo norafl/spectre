@@ -122,3 +122,7 @@ def dt_Du_self_force_per_mass(
         "ijk,j,k", christoffel, four_velocity, dt_self_force
     )
     return dt_Du_self_force_per_mass
+
+
+def turn_on_function(time, timescale):
+    return 1.0 - np.exp(-((time / timescale) ** 4))

@@ -123,7 +123,8 @@ struct MockMetavariables {
   using const_global_cache_tags =
       tmpl::list<domain::Tags::Domain<Dim>, Tags::ExcisionSphere<Dim>,
                  Tags::WorldtubeRadius, Tags::ExpansionOrder,
-                 Tags::MaxIterations, Tags::Charge, Tags::Mass>;
+                 Tags::MaxIterations, Tags::Charge, Tags::Mass, ::Tags::Time,
+                 Tags::SelfForceTurnOnTime, Tags::SelfForceTurnOnInterval>;
 };
 
 // This test checks that `SendToWorldtube` integrates the regular field on the
@@ -142,6 +143,8 @@ SPECTRE_TEST_CASE("Unit.CurvedScalarWave.Worldtube.SendToWorldtube", "[Unit]") {
   const size_t initial_extent = 10;
   const size_t face_size = initial_extent * initial_extent;
   const auto quadrature = Spectral::Quadrature::GaussLobatto;
+  // unused but the tag is needed to compile
+  const double time = std::numeric_limits<double>::signaling_NaN();
   // we create several differently refined shells so a different number of
   // elements sends data
   for (const auto& [expansion_order, initial_refinement, worldtube_radius] :
@@ -166,13 +169,18 @@ SPECTRE_TEST_CASE("Unit.CurvedScalarWave.Worldtube.SendToWorldtube", "[Unit]") {
     // self force and therefore iterative scheme is turned off
     tuples::TaggedTuple<domain::Tags::Domain<Dim>, Tags::ExcisionSphere<Dim>,
                         Tags::WorldtubeRadius, Tags::ExpansionOrder,
-                        Tags::MaxIterations, Tags::Charge, Tags::Mass>
+                        Tags::MaxIterations, Tags::Charge, Tags::Mass,
+                        ::Tags::Time, Tags::SelfForceTurnOnTime,
+                        Tags::SelfForceTurnOnInterval>
         tuple_of_opts{shell.create_domain(),
                       excision_sphere,
                       excision_sphere.radius(),
                       expansion_order,
                       static_cast<size_t>(0),
                       0.1,
+                      std::nullopt,
+                      time,
+                      std::nullopt,
                       std::nullopt};
     ActionTesting::MockRuntimeSystem<metavars> runner{std::move(tuple_of_opts)};
     const auto element_ids = initial_element_ids(initial_refinements);
