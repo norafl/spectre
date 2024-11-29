@@ -65,7 +65,7 @@ namespace domain::CoordinateMaps {
  *
  * UniformCylindricalFlatEndcap provides the following functions:
  *
- * ### operator()
+ * ## operator()
  *
  * `operator()` maps \f$(\bar{x},\bar{y},\bar{z})\f$ to \f$(x,y,z)\f$
  * according to
@@ -99,7 +99,7 @@ namespace domain::CoordinateMaps {
  * where \f$\bar{R}\f$ is the radius of the cylinder in barred
  * coordinates, which is always unity.
  *
- * ### inverse
+ * ## inverse
  *
  * Given \f$(x,y,z)\f$ we want to find \f$(\bar{x},\bar{y},\bar{z})\f$.
  * From Eq. (\f$\ref{eq:x2}\f$) we can write \f$\lambda\f$ as a function
@@ -144,12 +144,12 @@ namespace domain::CoordinateMaps {
  *   \bar{y} &= \bar{\rho}\bar{R}\sin\phi.
  * \f}
  *
- * #### Considerations when root-finding.
+ * ### Considerations when root-finding.
  *
  * We solve \f$Q(\bar{\rho})=0\f$ numerically for \f$\bar{\rho}\f$,
  * where \f$Q(\bar{\rho})\f$ is given by Eq. (\f$\ref{eq:defQ}\f$).
  *
- * ##### min/max values of \f$\bar{\rho}\f$:
+ * #### min/max values of \f$\bar{\rho}\f$:
  *
  * Note that the root we care about must have
  * \f$0\leq\lambda\leq 1\f$; therefore from Eq. (\f$\ref{eq:lambda_from_rho}\f$)
@@ -168,7 +168,7 @@ namespace domain::CoordinateMaps {
  * so we look for a root only between \f$\bar{\rho}_{\mathrm{min}}\f$
  * and \f$\bar{\rho}_{\mathrm{max}}\f$.
  *
- * ##### Roots within roundoff of endpoints:
+ * #### Roots within roundoff of endpoints:
  *
  * Sometimes a root is within roundoff of \f$\bar{\rho}_{\mathrm{min}}\f$
  * This tends to happen at points on the
@@ -218,7 +218,7 @@ namespace domain::CoordinateMaps {
  *  \label{eq:dlambda_drhobar}.
  * \f}
  *
- * ##### Roots within roundoff of \f$\bar{\rho}=0\f$ or \f$\bar{\rho}=1\f$:
+ * #### Roots within roundoff of \f$\bar{\rho}=0\f$ or \f$\bar{\rho}=1\f$:
  *
  * For some points on the boundary of the mapped domain, the root will
  * be within roundoff of \f$\bar{\rho}=0\f$ or \f$\bar{\rho}=1\f$.
@@ -237,7 +237,7 @@ namespace domain::CoordinateMaps {
  * recognized, the root is returned as either \f$\bar{\rho}=0\f$ or
  * \f$\bar{\rho}=1\f$.
  *
- * #### Quick rejection of points out of range of the map.
+ * ### Quick rejection of points out of range of the map.
  *
  * It is expected that `inverse()` will often be passed points
  * \f$(x,y,z)\f$ that are out of the range of the map; in this case
@@ -297,7 +297,7 @@ namespace domain::CoordinateMaps {
  * The inverse map can therefore reject any points that do
  * not satisfy this criterion.
  *
- * ### jacobian
+ * ## jacobian
  *
  * One can rewrite Eqs.(\f$\ref{eq:x0}\f$) through (\f$\ref{eq:x2}\f$) as
  *
@@ -395,12 +395,12 @@ namespace domain::CoordinateMaps {
  * \right).
  * \f}
  *
- * ### inv_jacobian
+ * ## inv_jacobian
  *
  * The inverse Jacobian is computed by numerically inverting the
  * Jacobian.
  *
- * ### Restrictions on map parameters
+ * ## Restrictions on map parameters
  *
  * We demand that \f$C^2_1 + 1.05 R_1 \leq C^2_2 \leq C^2_1 + 5 R_1\f$.
  * It is possible to construct a valid

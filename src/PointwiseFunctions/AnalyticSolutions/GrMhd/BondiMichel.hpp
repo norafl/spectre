@@ -83,7 +83,8 @@ namespace grmhd::Solutions {
  * \rho^{\gamma-1}=\frac{(\gamma-1)c_s^2}{\gamma K(\gamma-1-c_s^2)}.
  * \f}
  *
- * #### Horizon quantities, \f$\gamma\ne5/3\f$
+ * ## Horizon quantities, \f$\gamma\ne5/3\f$
+ *
  * The density at the horizon is given by:
  *
  * \f{align*}{
@@ -147,7 +148,8 @@ namespace grmhd::Solutions {
  * print("gamma: ", gamma)
  * \endcode
  *
- * #### Horizon quantities, \f$\gamma=5/3\f$
+ * ## Horizon quantities, \f$\gamma=5/3\f$
+ *
  * The density at the horizon is given by:
  *
  * \f{align*}{
