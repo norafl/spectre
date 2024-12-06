@@ -642,11 +642,11 @@ struct TimeDerivative {
     for (size_t i = 0; i < 3; ++i) {
       lapse_b_over_w.get(i) = lowercase_b_over_w.get(i) * get(lapse);
     }
-
+    /*
     for (size_t i = 0; i < 3; ++i) {
       get<::Tags::dt<grmhd::ValenciaDivClean::Tags::TildeS<>>>
         (*dt_vars_ptr).get(i) -= get(div_tilde_b) * lapse_b_over_w.get(i);
-    }
+        }*/
     /*
     Parallel::printf("\n\ndt_tilde_s_after\n\n%s\n", get<::Tags::dt<
       grmhd::ValenciaDivClean::Tags::TildeS<>>>(*dt_vars_ptr));
